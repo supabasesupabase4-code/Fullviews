@@ -1512,6 +1512,30 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         </div>
     </div>
 
+    <div class="modal" id="full-actions-modal" onclick="if(event.target===this)closeModal('full-actions-modal')">
+        <div class="modal-content" style="text-align:center;">
+            <h3 id="fa-title" style="margin:0 0 4px;">Your Full</h3>
+            <p id="fa-sub" style="color:var(--secondary-text);font-size:.85rem;margin:0 0 14px;">What do you want to do?</p>
+            <div id="fa-main">
+                <button class="btn" style="width:100%;max-width:100%;background:#e5383b;" onclick="faAskDelete()">🗑 Delete</button>
+                <button class="btn secondary" style="width:100%;max-width:100%;margin-top:8px;" onclick="faModify()">✏️ Modify</button>
+            </div>
+            <div id="fa-confirm" style="display:none;">
+                <button class="btn" style="width:100%;max-width:100%;background:#e5383b;" onclick="faDelete()">Yes, delete it</button>
+            </div>
+            <button class="btn secondary" style="width:100%;max-width:100%;margin-top:8px;" onclick="closeModal('full-actions-modal')">Cancel</button>
+        </div>
+    </div>
+    <div class="modal" id="full-edit-modal" onclick="if(event.target===this)closeModal('full-edit-modal')">
+        <div class="modal-content" style="text-align:left;">
+            <h3 style="margin:0 0 10px;text-align:center;">✏️ Modify your Full</h3>
+            <div class="form-group" style="max-width:100%"><label>Caption</label>
+                <textarea id="fe-caption" class="input-field" rows="3" maxlength="200" placeholder="Write a caption..."></textarea></div>
+            <button class="btn" style="width:100%;max-width:100%;" onclick="saveFullEdit()">Save</button>
+            <button class="btn secondary" style="width:100%;max-width:100%;margin-top:8px;" onclick="closeModal('full-edit-modal')">Cancel</button>
+        </div>
+    </div>
+
     <div class="modal" id="change-name-modal">
         <div class="modal-content" style="text-align: left;">
             <h3 style="text-align: center; margin-bottom: 5px;">Change Account Name</h3>
@@ -4342,7 +4366,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             mine.forEach(m => {
                 let d = document.createElement('div');
                 d.className = 'mn-thumb';
-                d.onclick = () => openMinim(m.id);
+                d.dataset.mid = m.id; d.onclick = () => openMinim(m.id);
                 d.innerHTML = `${m.thumb ? `<img src="${esc(m.thumb)}" alt="">` : ''}<span>▶</span><em>❤ ${(m.likes || []).length}</em>`;
                 reelsGrid.appendChild(d);
             });
@@ -7315,6 +7339,63 @@ window.openProfileDrawer = function(){
     '<div class="auth-tagline">Share your world in motion ✨</div><div class="auth-chips"><span>📸 Posts</span><span>🎬 Fulls</span><span>✨ Stories</span><span>💬 Chat</span></div>');
   Array.from(a.children).forEach(c => { if ((c.getAttribute('style') || '').indexOf('e8f4fd') > -1) c.classList.add('auth-info'); });
   let i = 0; Array.from(a.children).forEach(c => { if (!c.classList.contains('auth-blob')) c.style.setProperty('--i', i++); });
+})();
+
+/* ===== Long-press your own Full: Delete or Modify ===== */
+let faTarget = null;
+function openFullActions(id){
+  faTarget = id;
+  document.getElementById('fa-title').textContent = 'Your Full';
+  document.getElementById('fa-sub').textContent = 'What do you want to do?';
+  document.getElementById('fa-main').style.display = '';
+  document.getElementById('fa-confirm').style.display = 'none';
+  openModal('full-actions-modal');
+}
+function faAskDelete(){
+  document.getElementById('fa-title').textContent = 'Delete this Full?';
+  document.getElementById('fa-sub').textContent = 'This cannot be undone.';
+  document.getElementById('fa-main').style.display = 'none';
+  document.getElementById('fa-confirm').style.display = '';
+}
+function faDelete(){
+  const id = faTarget; closeModal('full-actions-modal');
+  const m = findItem('minim', id); if (!m) return;
+  deleteMinim(id, { dataset: { armed: '1' }, set innerText(v){}, isConnected: false });
+  try { renderProfileGrids(); updateMinimCount(); if (currentTabName === 'reels') renderMinims(); } catch(e){}
+}
+function faModify(){
+  const m = findItem('minim', faTarget); if (!m) return;
+  closeModal('full-actions-modal');
+  document.getElementById('fe-caption').value = m.caption || '';
+  openModal('full-edit-modal');
+}
+async function saveFullEdit(){
+  const m = findItem('minim', faTarget); if (!m) return;
+  const cap = document.getElementById('fe-caption').value.trim().slice(0, 200);
+  if (realUser() && isSrvId(m.id)){
+    const r = await sb.from('fulls').update({ caption: cap }).eq('id', m.id).select('id');
+    if (r.error || !r.data || !r.data.length){ showMsgBox('Could not save the change online. Run fulls_edit.sql in Supabase, then try again.'); return; }
+  }
+  m.caption = cap; saveToLocalStorage(); closeModal('full-edit-modal');
+  try { renderProfileGrids(); if (currentTabName === 'reels'){ minimFocusId = m.id; renderMinims(); } } catch(e){}
+}
+(function(){
+  let timer = null, sx = 0, sy = 0, fired = false;
+  function target(e){
+    const t = e.target && e.target.closest ? e.target.closest('.mn-thumb[data-mid], .minim[data-id]') : null; if (!t) return null;
+    if (e.target.closest('button,a,input,textarea')) return null;
+    const m = findItem('minim', Number(t.dataset.mid || t.dataset.id));
+    return (m && currentUser && !m.demo && m.authorName === currentUser.name) ? m : null;
+  }
+  document.addEventListener('pointerdown', e => {
+    const m = target(e); fired = false; clearTimeout(timer); if (!m) return;
+    sx = e.clientX; sy = e.clientY;
+    timer = setTimeout(() => { fired = true; try { navigator.vibrate && navigator.vibrate(30); } catch(_){} openFullActions(m.id); }, 550);
+  }, true);
+  ['pointerup','pointercancel'].forEach(ev => document.addEventListener(ev, () => clearTimeout(timer), true));
+  document.addEventListener('pointermove', e => { if (timer && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) clearTimeout(timer); }, true);
+  document.addEventListener('click', e => { if (fired){ e.stopPropagation(); e.preventDefault(); fired = false; } }, true);
+  document.addEventListener('contextmenu', e => { if (target(e)) e.preventDefault(); }, true);
 })();
 </script>
 
