@@ -5853,14 +5853,19 @@ async function uploadDataUrl(bucket, path, dataUrl) {
   if (up.error) throw up.error;
   return pubUrl(bucket, path);
 }
+// An item keeps showing its owner even after a rename: look the owner up by id, not by the old saved name
+function liveAuthor(r) {
+  const u = r.user_id ? users.find(x => x.id === r.user_id) : null;
+  return { name: u ? u.name : (r.author_name || 'Unknown'), color: u ? u.avatarColor : (r.author_color || '#6d4aff') };
+}
 function rowToPost(r) {
-  return { id: r.id, authorName: r.author_name || 'Unknown', authorColor: r.author_color || '#6d4aff', image: r.image_url, caption: r.caption || '',
+  return { id: r.id, authorName: liveAuthor(r).name, authorColor: liveAuthor(r).color, image: r.image_url, caption: r.caption || '',
     song: r.song || null, songLink: r.song_link || null, synth: r.synth || null, audioDataUrl: r.audio_url || null,
     mediaPath: r.image_path || null, audioPath: r.audio_path || null, createdAt: new Date(r.created_at).getTime(), likes: [], comments: [], reposts: [] };
 }
 function rowToFull(r) {
   videoUrlById[r.id] = pubUrl('fulls', r.video_path);
-  return { id: r.id, authorName: r.author_name || 'Unknown', authorColor: r.author_color || '#6d4aff', caption: r.caption || '',
+  return { id: r.id, authorName: liveAuthor(r).name, authorColor: liveAuthor(r).color, caption: r.caption || '',
     thumb: r.thumb_url || null, duration: r.duration || 0, videoPath: r.video_path, thumbPath: r.thumb_path || null,
     createdAt: new Date(r.created_at).getTime(), likes: [], comments: [], reposts: [] };
 }
