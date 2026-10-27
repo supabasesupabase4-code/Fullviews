@@ -1120,7 +1120,10 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <div style="background: #e8f4fd; border: 1px solid #b6dffd; padding: 12px 16px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; text-align: center;">
                 <p style="color: #0056b3; font-size: 0.9rem; font-weight: 600; line-height: 1.4;">enjoy your first time in fullviews</p>
             </div>
-            <p style="font-size:.75rem;color:var(--secondary-text);max-width:320px;margin-bottom:12px;line-height:1.4;">Demo version: your account and content are saved only on this device and browser. Use <b>Back up my data</b> in your profile menu to keep a copy.</p>
+            <div id="free-notice" style="background:#eefaf1;border:1px solid #b9e6c6;padding:10px 14px;border-radius:10px;width:100%;max-width:320px;margin-bottom:10px;text-align:center;">
+                <p style="color:#1e6b36;font-size:.8rem;font-weight:600;line-height:1.4;">fullview is 100% free right now: every feature, including Fulls and account verification, is available at no cost. No payment is ever requested.</p>
+            </div>
+            <p style="font-size:.75rem;color:var(--secondary-text);max-width:320px;margin-bottom:12px;line-height:1.4;">Your account and content are saved online and cached on this device. Use <b>Back up my data</b> in your profile menu to keep a copy.</p>
 
             <button class="btn" style="background: white; color: var(--text); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;" onclick="enterAsInvitant()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6d4aff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4-6 8-6s7 1.8 8 6"/></svg>
@@ -1403,7 +1406,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                         <span class="drawer-item-icon">✅</span>
                         <span style="font-weight: 600;">Verify my account</span>
                     </div>
-                    <span style="font-size:0.85rem; color:var(--secondary-text);">$15 &gt;</span>
+                    <span style="font-size:0.85rem; color:var(--secondary-text);">Free &gt;</span>
                 </div>
 
                 <div id="drawer-autoresp-wrap" style="display:none;">
@@ -1502,21 +1505,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <button class="btn secondary" style="width:100%;max-width:100%;margin-top:10px;" onclick="document.getElementById('ios-help').style.display='block'">🍎 iOS</button>
             <p id="ios-help" style="display:none;color:var(--secondary-text);font-size:.8rem;margin-top:8px;">There is no iOS app file. Open fullview in Safari, tap the Share button, then choose <b>Add to Home Screen</b>.</p>
             <button class="btn secondary" style="width:100%;max-width:100%;margin-top:12px;" onclick="closeModal('download-modal')">Close</button>
-        </div>
-    </div>
-
-    <div class="modal" id="verify-pay-modal" onclick="if(event.target===this)closeModal('verify-pay-modal')">
-        <div class="modal-content" style="text-align:center;">
-            <div style="font-size:2.4rem;">✅</div>
-            <h3 style="margin:4px 0;">Verify my account</h3>
-            <div style="font-size:2rem;font-weight:800;margin:6px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;">$15</div>
-            <p style="color:var(--secondary-text);font-size:.84rem;margin-bottom:10px;">One-time payment</p>
-            <ul style="text-align:left;list-style:none;padding:0;margin:0 auto 14px;max-width:260px;font-size:.88rem;line-height:1.9;">
-                <li>✔️ Verified badge next to your name</li>
-                <li>✔️ Verified tools, like Auto response</li>
-            </ul>
-            <button class="btn" style="width:100%;max-width:100%;" onclick="payVerify()">Pay $15</button>
-            <button class="btn secondary" style="width:100%;max-width:100%;margin-top:8px;" onclick="closeModal('verify-pay-modal')">Not now</button>
         </div>
     </div>
 
@@ -1783,22 +1771,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <h3 style="margin-bottom: 10px; color: var(--text);">Notification</h3>
             <p id="msg-box-text" style="color: var(--secondary-text); font-size: 0.95rem; margin-bottom: 20px;"></p>
             <button class="btn" onclick="closeMsgBox()" style="width: 100%; max-width: 100%;">OK</button>
-        </div>
-    </div>
-
-    <div class="modal" id="minims-payment-modal">
-        <div class="modal-content" style="max-width: 360px;">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">👑</div>
-            <h3 style="margin-bottom: 6px;">Unlock Fulls</h3>
-            <p style="color:var(--secondary-text); font-size:0.85rem; margin-bottom:20px; line-height: 1.4;">
-                Get exclusive access to Fulls, custom badges, and advanced features across fullview.
-            </p>
-            <div style="background: #f0f8ff; border: 1px solid #b3d7ff; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <span style="font-size: 0.85rem; color: #0056b3; display: block; font-weight: 600;">One-Time Upgrade</span>
-                <span style="font-size: 1.8rem; font-weight: bold; color: #004085;">$10.00</span>
-            </div>
-            <button class="btn" onclick="processMinimsPayment()" style="background: linear-gradient(135deg, #ff9500, #ff5e00); margin-top:0; width:100%;">Pay $10 & Unlock Now</button>
-            <button class="btn secondary" style="margin-top:8px; width:100%;" onclick="closeModal('minims-payment-modal')">Cancel</button>
         </div>
     </div>
 
@@ -5454,14 +5426,15 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             document.getElementById('drawer-sub-screen').classList.remove('active');
         }
 
+        // Payments were removed: fullview and all its features (Fulls, verification) are free.
+        // These stubs are kept so that no old call can ever open a payment flow.
         function openMinimsPaymentModal() {
             closeProfileDrawer();
-            showMsgBox('Fulls are free for everyone. Payments are not enabled in fullview.');
+            showMsgBox('fullview is 100% free right now: every feature, including Fulls and account verification, is available at no cost. No payment is ever requested.');
         }
 
         function processMinimsPayment() {
-            closeModal('minims-payment-modal');
-            showMsgBox('Payments are not enabled. No money was charged and nothing was unlocked because Fulls are free.');
+            showMsgBox('fullview is 100% free right now: every feature, including Fulls and account verification, is available at no cost. No payment is ever requested.');
         }
 
         // ================= REPORTS, LEGAL, ACCOUNT DELETION, TIME LIMIT =================
@@ -5553,39 +5526,88 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         const CONTACT_EMAIL = '';
         const LEGAL = {
             privacy: { title: 'Privacy Policy', html: `
-                <p><b>Last updated: October 2026.</b></p>
-                <h4>What fullview stores</h4>
-                <ul><li>Your display name, email or username and a salted hash of your password (never the password itself).</li>
-                <li>Your profile photo, public note, posts, stories, Fulls, comments, likes, messages and voice messages.</li>
-                <li>Your settings (privacy, blocked people, close friends, time limit).</li></ul>
-                <h4>Where it is stored</h4>
-                <p>In this version, your data is stored in your own browser (localStorage and IndexedDB) on this device. It is not uploaded by the app and is not visible on other devices. You can download a copy with Back up my data in the profile menu. Clearing your browser data erases it. Invitant (guest) sessions are never saved.</p>
-                <h4>Third parties</h4>
-                <ul><li>Google Fonts loads the app font, which shares your IP address with Google.</li>
-                <li>"Listen" links on songs open a YouTube search in a new tab; fullview does not host that music.</li>
-                <li>The microphone is used only while you record a voice message.</li></ul>
-                <h4>Your choices</h4>
-                <p>You can edit your profile, block people, make your account private, report content, and delete your account and all its content at any time from the profile menu (Delete my account).</p>
-                <h4>Children</h4>
-                <p>fullview is not for children under 13. If you are under 13, please do not create an account.</p>
-                <h4>Contact</h4>
-                <p>${CONTACT_EMAIL ? 'Contact: ' + esc(CONTACT_EMAIL) : 'To reach us, use the Report button on any post, Full or profile.'}</p>` },
+                <p><b>Last updated: October 27, 2026.</b></p>
+                <p>This policy explains what personal data fullview collects, where it is stored, who else handles it, and how you can control or erase it. By creating an account you confirm that you have read it.</p>
+
+                <h4>1. Data we process</h4>
+                <ul>
+                <li><b>Account data:</b> your display name, your email address and your password. Your password is never stored in plain text: it is handled by Supabase Auth, which keeps only a salted hash of it, and the app never keeps a copy.</li>
+                <li><b>Profile data:</b> your profile photo, public note, privacy and notification settings, blocked people, close friends and friend requests.</li>
+                <li><b>Content you create:</b> photos (posts and stories), videos (Fulls) and their thumbnails, captions, songs or audio you attach, comments, likes and reposts.</li>
+                <li><b>Communications:</b> direct messages, global chat messages and voice messages (audio recordings), and your auto-response rules if you use them.</li>
+                <li><b>Safety data:</b> reports you send or receive (reason, details and a short excerpt of the reported caption) and moderation decisions such as bans.</li>
+                <li><b>Technical data on your device:</b> language, daily time limit and usage counter, and cached copies of content (see section 2).</li></ul>
+                <p>Invitant (guest) sessions create no account and nothing you do as a guest is saved.</p>
+
+                <h4>2. Where your data is stored</h4>
+                <ul>
+                <li><b>Cloud (Supabase):</b> accounts, profiles, posts, stories, Fulls, comments, likes, reposts, messages, friendships, blocks, reports and auto-responses are kept in a Supabase database (PostgreSQL). Files are kept in Supabase Storage buckets: <b>media</b> (post and story photos, attached audio), <b>fulls</b> (videos and thumbnails), <b>avatars</b> (profile photos) and <b>voice</b> (voice messages, served only through temporary private links).</li>
+                <li><b>On your device (localStorage and IndexedDB):</b> a cached copy of the content you see, your settings, language, daily time limit and, for videos, local media files. This stays in your browser and is removed when you log out of a shared device, clear your browser data or delete your account.</li></ul>
+                <p>Public posts, stories and Fulls are visible to other users of fullview. If your account is private, your content is shown according to your privacy settings. Direct messages are visible to the people in the conversation; global chat messages are visible to everyone in the chat. Reports are visible to administrators.</p>
+
+                <h4>3. Third-party services</h4>
+                <ul>
+                <li><b>Supabase</b> hosts the database, authentication and file storage and processes your data on our behalf.</li>
+                <li><b>jsDelivr (cdn.jsdelivr.net)</b> delivers the Supabase JavaScript library; your IP address is visible to it when the app loads.</li>
+                <li><b>Google Fonts (fonts.googleapis.com, fonts.gstatic.com)</b> delivers the app fonts; your IP address is visible to Google when the app loads.</li>
+                <li><b>YouTube:</b> the Listen links on songs open a YouTube search in a new tab only when you tap them. fullview does not host that music.</li>
+                <li>Your microphone is used only while you record a voice message, and your camera or files only when you choose to add a photo or video.</li></ul>
+                <p>fullview contains no advertising and no analytics trackers, and we do not sell your data.</p>
+
+                <h4>4. How long we keep it</h4>
+                <p>We keep your data until you delete it or delete your account. Server backups kept by the hosting provider may hold copies for a limited time before they are overwritten.</p>
+
+                <h4>5. Your rights</h4>
+                <ul>
+                <li><b>Access:</b> you can see your profile and content in the app, and you can download a copy with <b>Back up my data</b> in the profile menu.</li>
+                <li><b>Correction:</b> you can change your name, photo, public note and captions at any time.</li>
+                <li><b>Deletion:</b> <b>Delete my account</b> in the profile menu permanently erases your login, profile, posts, stories, Fulls, comments, likes, reposts, the messages you sent (including voice messages), friendships, blocks, close friends, auto-responses, and your files in the <b>media</b>, <b>fulls</b>, <b>avatars</b> and <b>voice</b> storage buckets, as well as the copies cached on your device. You can also delete single items at any time.</li>
+                <li>Depending on where you live (for example under the GDPR), you may also have the rights to object, restrict processing, or complain to your data protection authority. To use a right we cannot offer in the app, contact us (see below).</li></ul>
+
+                <h4>6. Children</h4>
+                <p>fullview is not for children under 13. Creating an account requires you to confirm that you are at least 13 years old. If we learn that an account belongs to a child under 13, we will delete it and its content.</p>
+
+                <h4>7. Security</h4>
+                <p>Connections to Supabase use HTTPS and passwords are hashed. No online service is perfectly secure, so please choose a strong, unique password.</p>
+
+                <h4>8. Changes and contact</h4>
+                <p>We may update this policy and will change the date above when we do.</p>
+                <p>${CONTACT_EMAIL ? 'Contact: ' + esc(CONTACT_EMAIL) : 'To reach us, use the 🚩 Report button on any post, Full or profile.'}</p>` },
             terms: { title: 'Terms of Use', html: `
-                <p><b>Last updated: October 2026.</b></p>
-                <h4>Who can use fullview</h4>
-                <p>You must be at least 13 years old. You are responsible for your account and for keeping your password private.</p>
-                <h4>What you may post</h4>
-                <ul><li>Only post photos, videos and audio that you own or have permission to use.</li>
-                <li>Do not post anything illegal, hateful, harassing, violent, sexually explicit, or that endangers or sexualises minors.</li>
-                <li>Do not impersonate other people or spam.</li></ul>
-                <h4>Moderation</h4>
-                <p>Use the 🚩 Report button to report content. Administrators may remove content, remove verification badges, and ban accounts that break these rules. The verified badge is granted by administrators.</p>
-                <h4>Your content</h4>
-                <p>You keep ownership of what you post. You can delete individual items or your whole account at any time.</p>
-                <h4>No guarantees</h4>
-                <p>fullview is provided "as is", without warranties. Because data is stored in your browser, it can be lost if you clear your browser data or run out of storage.</p>
-                <h4>Changes</h4>
-                <p>These terms may change. Continuing to use fullview means you accept the updated terms.</p>` }
+                <p><b>Last updated: October 27, 2026.</b></p>
+
+                <h4>1. Who can use fullview</h4>
+                <p><b>You must be at least 13 years old.</b> You confirm this when you create an account or log in. If you are under 13 you must not use fullview, and we will delete any account we find belongs to a child under 13. If the law where you live requires a parent or guardian to agree to your use of online services at your age, you must have that permission. You are responsible for your account and for keeping your password private.</p>
+
+                <h4>2. fullview is free</h4>
+                <p>fullview and all of its features, including Fulls and account verification, are currently <b>100% free</b>. No payment is requested. If a paid feature is ever introduced, it will be announced clearly in advance and nothing will be charged without your explicit agreement.</p>
+
+                <h4>3. What you may not post</h4>
+                <ul>
+                <li><b>Copyright:</b> do not post photos, videos, music or other material that you do not own and do not have permission to use.</li>
+                <li><b>Hateful content:</b> nothing that attacks or demeans people because of who they are, and no harassment, threats or bullying.</li>
+                <li><b>Sexual content:</b> no sexually explicit content or nudity. Any sexual content involving or sexualising a minor is strictly forbidden and will be reported to the authorities.</li>
+                <li><b>Dangerous content:</b> no violence, no encouragement of self-harm or dangerous acts, no illegal activity and no content that endangers others.</li>
+                <li>No impersonation, spam, scams or sharing of other people's private information.</li></ul>
+
+                <h4>4. Reporting and moderation</h4>
+                <p>Use the <b>🚩 Report</b> button on any post, story, Full or profile and choose a reason (for example Copyright, Harassment or hate, Nudity or sexual content). Reports are reviewed by the administrators.</p>
+                <p>Administrators may remove content, remove verification badges, and suspend or <b>ban accounts</b> that break these rules, with or without notice. Automatic filters may also block or ban an account for severe violations. If your content is removed or your account is banned and you think it is a mistake, contact us.</p>
+
+                <h4>5. Copyright complaints</h4>
+                <p>If you believe your work was posted without your permission, report it with the 🚩 button and choose Copyright. We remove infringing content and may ban people who repeatedly infringe copyright.</p>
+
+                <h4>6. Your content</h4>
+                <p>You keep ownership of what you post. You give fullview a limited, non-exclusive licence to store, display and distribute it inside the service so that it can work (for example showing your post to other users). This licence ends when you delete the content or your account, except for copies that other users have legitimately reposted within fullview, which are removed with the original. You promise that you have the rights to what you post.</p>
+
+                <h4>7. Ending your use</h4>
+                <p>You can delete your account at any time with <b>Delete my account</b> in the profile menu. This permanently erases your data as described in the Privacy Policy and cannot be undone.</p>
+
+                <h4>8. No guarantees</h4>
+                <p>fullview is provided "as is", without warranties. We do not guarantee that it will always be available or free of errors, and, as far as the law allows, we are not liable for losses caused by using it or by content posted by other users. Use Back up my data to keep your own copy.</p>
+
+                <h4>9. Changes</h4>
+                <p>These terms may change. Continuing to use fullview after a change means you accept the updated terms.</p>` }
         };
         function openLegal(which) {
             let d = LEGAL[which]; if (!d) return;
@@ -5691,6 +5713,24 @@ const sbReady = !/^PASTE/.test(SUPABASE_ANON_KEY) && !!(window.supabase);
 const sb = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
 const PROFILE_COLS = 'id,name,avatar_color,avatar_url,public_note,is_private,verified,banned,is_admin,crosspost,last_name_change,created_at';
 
+/* ---- Age (13+) and terms gate: nothing is sent to the server unless the box is ticked ---- */
+function requireAgeConsent(boxId) {
+  const box = document.getElementById(boxId);
+  const ok = !!(box && box.checked);
+  const lbl = box && box.closest ? box.closest('.auth-consent') : null;
+  if (lbl) lbl.classList.toggle('consent-error', !ok);
+  if (!ok) showMsgBox('You must confirm that you are at least 13 years old and accept the Terms of Use and the Privacy Policy before you can create an account or log in.');
+  return ok;
+}
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.auth-consent.consent-error{outline:2px solid #d62828;outline-offset:3px;border-radius:8px}';
+  document.head.appendChild(st);
+  ['reg-consent', 'vl-consent'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.addEventListener('change', () => { const l = b.closest('.auth-consent'); if (l && b.checked) l.classList.remove('consent-error'); });
+  });
+})();
 function needKey() { if (!sbReady) { showMsgBox('The app is not connected to Supabase yet. Paste your anon key in the SUPABASE_ANON_KEY line of the file.'); return true; } return false; }
 function realUser() { return !!(sb && currentUser && !currentUser.isGuest); }
 
@@ -5732,7 +5772,7 @@ window.completeRegistration = async function () {
   const email = document.getElementById('reg-email').value.trim().toLowerCase();
   const password = document.getElementById('reg-password').value.trim();
   if (!name || !email || !password) { showMsgBox('Please fill in your name, email and password.'); return; }
-  if (!document.getElementById('reg-consent').checked) { showMsgBox('Please confirm you are at least 13 years old and accept the Terms of Use and the Privacy Policy.'); return; }
+  if (!requireAgeConsent('reg-consent')) return;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsgBox('Please enter a valid email address.'); return; }
   const lock = loginLocked(email);
   if (lock) { showMsgBox('Too many wrong attempts. Try again in ' + lock + ' seconds.'); return; }
@@ -5747,7 +5787,7 @@ window.completeRegistration = async function () {
   if (nErr) { loginFailed(email); showMsgBox(nErr + ' (If you already have an account, check your password.)'); return; }
   if (password.length < 6) { showMsgBox('Your password must have at least 6 characters.'); return; }
   if (!(await nameAvailable(name))) { loginFailed(email); showMsgBox('That name is already used by another account. If this is your account, check your password.'); return; }
-  const s = await sb.auth.signUp({ email, password, options: { data: { name } } });
+  const s = await sb.auth.signUp({ email, password, options: { data: { name, age_13_confirmed: true, terms_accepted_at: new Date().toISOString() } } });
   if (s.error) {
     if (/already/i.test(s.error.message)) { loginFailed(email); showMsgBox('Wrong password for this account.'); }
     else showMsgBox(s.error.message);
@@ -5766,7 +5806,7 @@ window.submitVerifyLogin = async function () {
   const pass = document.getElementById('vl-pass').value.trim();
   const ver = document.getElementById('vl-ver').value.trim();
   if (!email || !pass || !ver) { showMsgBox('Please fill in your email, password and the verification password.'); return; }
-  if (!document.getElementById('vl-consent').checked) { showMsgBox('Please confirm you are at least 13 years old and accept the Terms and Privacy Policy.'); return; }
+  if (!requireAgeConsent('vl-consent')) return;
   const lock = loginLocked('verify');
   if (lock) { showMsgBox('Too many attempts. Try again in ' + lock + ' seconds.'); return; }
   const r = await sb.auth.signInWithPassword({ email, password: pass });
@@ -5790,6 +5830,7 @@ window.logout = async function () {
   try { if (sb) await sb.auth.signOut(); } catch (e) {}
   try { localStorage.removeItem('fullview_current_user'); } catch (e) {}
   currentUser = null;
+  ['reg-consent', 'vl-consent'].forEach(id => { const b = document.getElementById(id); if (b) b.checked = false; });
   document.getElementById('main-nav').style.display = 'none';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('auth-screen').classList.add('active');
@@ -5857,18 +5898,121 @@ window.submitNewName = async function () {
   }
 };
 
-/* ---- Delete account: check password online, delete the login, then clean local data ---- */
+/* ---- Delete account: purge Supabase rows + files, delete the login, then clean local data ---- */
+async function sbListFiles(bucket, prefix) {            // every file under a folder, including sub-folders
+  const out = [];
+  const walk = async (path) => {
+    let offset = 0;
+    for (let guard = 0; guard < 200; guard++) {
+      const { data, error } = await sb.storage.from(bucket).list(path, { limit: 100, offset, sortBy: { column: 'name', order: 'asc' } });
+      if (error) throw error;
+      if (!data || !data.length) break;
+      for (const it of data) { if (it.id === null || it.id === undefined) await walk(path + '/' + it.name); else out.push(path + '/' + it.name); }
+      if (data.length < 100) break;
+      offset += 100;
+    }
+  };
+  await walk(prefix);
+  return out;
+}
+async function sbRemoveFiles(bucket, paths) {
+  const list = Array.from(new Set(paths.filter(Boolean)));
+  for (let i = 0; i < list.length; i += 100) {
+    const { error } = await sb.storage.from(bucket).remove(list.slice(i, i + 100));
+    if (error) throw error;
+  }
+}
+// Deletes everything the user owns online. Returns a list of failures (empty = fully erased).
+async function purgeMyServerData() {
+  const me = currentUser.id, fails = [];
+  const files = { media: [], fulls: [], avatars: [me + '/avatar.jpg'], voice: [] };
+  const step = async (label, fn, critical) => {
+    try { const r = await fn(); if (r && r.error) throw r.error; }
+    catch (e) { if (critical) fails.push(label + ': ' + ((e && e.message) || e)); else console.warn('Erase (optional) ' + label, e); }
+  };
+  const inList = (ids) => ids.length ? ids : [-1];
+
+  // 1) My posts, stories and Fulls, with everything attached to them (comments, likes, reposts) and their file paths
+  const items = [['posts', 'post', 'id,image_path,audio_path', 'media'],
+                 ['stories', 'story', 'id,image_path,audio_path', 'media'],
+                 ['fulls', 'full', 'id,video_path,thumb_path', 'fulls']];
+  for (const [table, kind, cols, bucket] of items) {
+    await step('delete ' + table, async () => {
+      for (let guard = 0; guard < 100; guard++) {
+        const r = await sb.from(table).select(cols).eq('user_id', me).limit(500);
+        if (r.error) return r;
+        const rows = r.data || [];
+        if (!rows.length) return;
+        const ids = rows.map(x => x.id);
+        rows.forEach(x => files[bucket].push(x.image_path, x.audio_path, x.video_path, x.thumb_path));
+        const cm = await sb.from('comments').select('id').eq('kind', kind).in('item_id', ids);
+        if (cm.error) return cm;
+        const cids = (cm.data || []).map(x => x.id);
+        if (cids.length) {
+          let e = (await sb.from('likes').delete().eq('kind', 'comment').in('item_id', cids)).error; if (e) return { error: e };
+          e = (await sb.from('comments').delete().in('id', cids)).error; if (e) return { error: e };
+        }
+        let e = (await sb.from('likes').delete().eq('kind', kind).in('item_id', ids)).error; if (e) return { error: e };
+        e = (await sb.from('reposts').delete().eq('kind', kind).in('item_id', ids)).error; if (e) return { error: e };
+        e = (await sb.from(table).delete().in('id', ids).eq('user_id', me)).error; if (e) return { error: e };
+        if (rows.length < 500) return;
+      }
+    }, true);
+  }
+
+  // 2) My comments on other people's content (and the likes those comments received)
+  await step('delete comments', async () => {
+    for (let guard = 0; guard < 100; guard++) {
+      const r = await sb.from('comments').select('id').eq('user_id', me).limit(500);
+      if (r.error) return r;
+      const cids = (r.data || []).map(x => x.id);
+      if (!cids.length) return;
+      let e = (await sb.from('likes').delete().eq('kind', 'comment').in('item_id', cids)).error; if (e) return { error: e };
+      e = (await sb.from('comments').delete().in('id', cids)).error; if (e) return { error: e };
+      if (cids.length < 500) return;
+    }
+  }, true);
+
+  // 3) My likes and reposts, my messages (text and voice), friendships, blocks, close friends, auto-responses, reports
+  await step('delete likes', () => sb.from('likes').delete().eq('user_id', me), true);
+  await step('delete reposts', () => sb.from('reposts').delete().eq('user_id', me), true);
+  await step('delete messages', () => sb.from('messages').delete().eq('sender_id', me), true);
+  await step('delete friendships', () => sb.from('friendships').delete().or('requester_id.eq.' + me + ',addressee_id.eq.' + me), true);
+  await step('delete blocks', () => sb.from('blocks').delete().or('blocker_id.eq.' + me + ',blocked_id.eq.' + me), true);
+  await step('delete close friends', () => sb.from('close_friends').delete().or('user_id.eq.' + me + ',friend_id.eq.' + me), true);
+  await step('delete auto-responses', () => sb.from('auto_responses').delete().eq('user_id', me), false);
+  await step('delete reports', () => sb.from('reports').delete().or('author_id.eq.' + me + ',reporter_id.eq.' + me), false);
+
+  // 4) Files: everything in my folder of each bucket, plus the exact paths read above
+  for (const bucket of ['media', 'fulls', 'avatars', 'voice']) {
+    await step('list ' + bucket, async () => { files[bucket].push(...(await sbListFiles(bucket, me))); }, false);
+    await step('remove files in ' + bucket, () => sbRemoveFiles(bucket, files[bucket]), true);
+  }
+  return fails;
+}
+
 window.confirmDeleteAccount = async function () {
   const me = users.find(u => u.id === currentUser.id) || currentUser;
   if (realUser()) {
     const pw = document.getElementById('del-acc-pass').value;
     if (!pw) { showMsgBox('Please enter your password.'); return; }
-    const chk = await sb.auth.signInWithPassword({ email: currentUser.email, password: pw });
-    if (chk.error) { showMsgBox('Wrong password.'); return; }
-    const del = await sb.rpc('delete_my_account');
-    if (del.error) { showMsgBox('Could not delete your account online. Did you run the stage 1 SQL?'); return; }
+    const btn = document.querySelector('#delete-account-modal .btn:not(.secondary)');
+    if (window._deletingAccount) return;
+    window._deletingAccount = true;
+    const label = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+    const restore = () => { window._deletingAccount = false; if (btn) { btn.disabled = false; btn.textContent = label; } };
+    try {
+      const chk = await sb.auth.signInWithPassword({ email: currentUser.email, password: pw });
+      if (chk.error) { restore(); showMsgBox('Wrong password.'); return; }
+      const fails = await purgeMyServerData();       // while the login still exists, so the database lets us delete
+      if (fails.length) { restore(); showMsgBox('Some of your online data could not be erased, so your account was kept. Please try again. (' + fails[0] + ')'); return; }
+      const del = await sb.rpc('delete_my_account');  // removes the profile and the login itself
+      if (del.error) { restore(); showMsgBox('Could not delete your account online. Did you run the stage 1 SQL?'); return; }
+    } catch (e) { restore(); showMsgBox('Could not delete your account: ' + ((e && e.message) || 'connection problem')); return; }
+    restore();
   }
-  doDeleteAccount(me);
+  doDeleteAccount(me);                               // then clean this device (localStorage and IndexedDB)
 };
 </script>
 
@@ -7309,9 +7453,9 @@ try {
   }
 } catch(e){}
 
-/* ===== Verify my account (payment coming soon) ===== */
-function openVerifyPay(){ openModal('verify-pay-modal'); }
-function payVerify(){ showMsgBox('This option will be available in the next updates.'); }
+/* ===== Verify my account (free: no payment of any kind) ===== */
+function openVerifyPay(){ showMsgBox('Verification is free of charge. The verified badge is granted by fullview administrators. Once your account is verified, use Log in as verified. No payment is ever requested.'); }
+function payVerify(){ showMsgBox('Verification is free of charge. The verified badge is granted by fullview administrators. Once your account is verified, use Log in as verified. No payment is ever requested.'); }
 const _vpDrawer = window.openProfileDrawer;
 window.openProfileDrawer = function(){
   const r = _vpDrawer.apply(this, arguments);
@@ -7419,6 +7563,13 @@ async function saveFullEdit(){
 /* ===== Languages: swipe to choose the language of the app ===== */
 const LANGS = [['en','🇬🇧','English'],['fr','🇫🇷','Français'],['ar','🇸🇦','العربية'],['es','🇪🇸','Español'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano'],['pt','🇵🇹','Português'],['tr','🇹🇷','Türkçe']];
 const I18N = {"Home":["Accueil","الرئيسية","Inicio","Start","Home","Início","Ana sayfa"],"Profile":["Profil","الملف الشخصي","Perfil","Profil","Profilo","Perfil","Profil"],"Messages":["Messages","الرسائل","Mensajes","Nachrichten","Messaggi","Mensagens","Mesajlar"],"Stories":["Stories","القصص","Historias","Stories","Storie","Stories","Hikâyeler"],"Explore":["Explorer","استكشف","Explorar","Entdecken","Esplora","Explorar","Keşfet"],"Search":["Rechercher","بحث","Buscar","Suchen","Cerca","Pesquisar","Ara"],"Posts":["Publications","المنشورات","Publicaciones","Beiträge","Post","Publicações","Gönderiler"],"posts":["publications","منشورات","publicaciones","Beiträge","post","publicações","gönderi"],"followers":["abonnés","متابعون","seguidores","Follower","follower","seguidores","takipçi"],"Activity":["Activité","النشاط","Actividad","Aktivität","Attività","Atividade","Etkinlik"],"All":["Tout","الكل","Todo","Alle","Tutti","Tudo","Tümü"],"Likes":["J'aime","الإعجابات","Me gusta","Likes","Mi piace","Curtidas","Beğeniler"],"Reposts":["Republications","إعادة النشر","Reposts","Reposts","Repost","Republicações","Yeniden paylaşımlar"],"Comments":["Commentaires","التعليقات","Comentarios","Kommentare","Commenti","Comentários","Yorumlar"],"Comment reactions":["Réactions aux commentaires","ردود الفعل على التعليقات","Reacciones a comentarios","Reaktionen auf Kommentare","Reazioni ai commenti","Reações aos comentários","Yorum tepkileri"],"Nothing here yet.":["Rien ici pour le moment.","لا يوجد شيء هنا بعد.","Aún no hay nada aquí.","Noch nichts hier.","Ancora niente qui.","Nada aqui ainda.","Henüz burada bir şey yok."],"Invitant":["Invité","زائر","Invitado","Gast","Ospite","Convidado","Misafir"],"Log in as verification":["Se connecter en tant que vérifié","تسجيل الدخول كحساب موثّق","Iniciar sesión como verificado","Als verifiziert anmelden","Accedi come verificato","Entrar como verificado","Doğrulanmış olarak giriş yap"],"Log in as verified":["Se connecter en tant que vérifié","تسجيل الدخول كحساب موثّق","Iniciar sesión como verificado","Als verifiziert anmelden","Accedi come verificato","Entrar como verificado","Doğrulanmış olarak giriş yap"],"OR EMAIL":["OU PAR E-MAIL","أو بالبريد الإلكتروني","O CON CORREO","ODER PER E-MAIL","OPPURE CON EMAIL","OU POR E-MAIL","VEYA E-POSTA İLE"],"Your Name":["Votre nom","اسمك","Tu nombre","Dein Name","Il tuo nome","Seu nome","Adınız"],"Email":["E-mail","البريد الإلكتروني","Correo electrónico","E-Mail","Email","E-mail","E-posta"],"Password":["Mot de passe","كلمة المرور","Contraseña","Passwort","Password","Senha","Şifre"],"Start fullview":["Commencer sur fullview","ابدأ في fullview","Empezar en fullview","Mit fullview starten","Inizia con fullview","Começar no fullview","fullview'e başla"],"Download the app":["Télécharger l'application","تنزيل التطبيق","Descargar la app","App herunterladen","Scarica l'app","Baixar o app","Uygulamayı indir"],"Share your world in motion ✨":["Partagez votre monde en mouvement ✨","شارك عالمك بالحركة ✨","Comparte tu mundo en movimiento ✨","Teile deine Welt in Bewegung ✨","Condividi il tuo mondo in movimento ✨","Compartilhe seu mundo em movimento ✨","Dünyanı hareket halinde paylaş ✨"],"enjoy your first time in fullviews":["profitez de votre première fois sur fullviews","استمتع بأول مرة لك في fullviews","disfruta tu primera vez en fullviews","genieße dein erstes Mal auf fullviews","goditi la tua prima volta su fullviews","aproveite sua primeira vez no fullviews","fullviews'e ilk girişinin keyfini çıkar"],"Visit fullview as a guest. Nothing you do will be saved.":["Visitez fullview en tant qu'invité. Rien ne sera enregistré.","زر fullview كضيف. لن يتم حفظ أي شيء.","Visita fullview como invitado. No se guardará nada.","Besuche fullview als Gast. Nichts wird gespeichert.","Visita fullview come ospite. Nulla verrà salvato.","Visite o fullview como convidado. Nada será salvo.","fullview'i misafir olarak ziyaret et. Hiçbir şey kaydedilmez."],"I am at least 13 years old and I accept the":["J'ai au moins 13 ans et j'accepte les","عمري 13 عامًا على الأقل وأوافق على","Tengo al menos 13 años y acepto los","Ich bin mindestens 13 Jahre alt und akzeptiere die","Ho almeno 13 anni e accetto i","Tenho pelo menos 13 anos e aceito os","En az 13 yaşındayım ve şunları kabul ediyorum:"],"and the":["et la","و","y la","und die","e la","e a","ve"],"Terms of Use":["Conditions d'utilisation","شروط الاستخدام","Términos de uso","Nutzungsbedingungen","Termini di utilizzo","Termos de uso","Kullanım Şartları"],"Privacy Policy":["Politique de confidentialité","سياسة الخصوصية","Política de privacidad","Datenschutzerklärung","Informativa sulla privacy","Política de privacidade","Gizlilik Politikası"],"Enter your full name":["Entrez votre nom complet","أدخل اسمك الكامل","Introduce tu nombre completo","Gib deinen vollständigen Namen ein","Inserisci il tuo nome completo","Digite seu nome completo","Tam adınızı girin"],"Enter your email":["Entrez votre e-mail","أدخل بريدك الإلكتروني","Introduce tu correo","Gib deine E-Mail ein","Inserisci la tua email","Digite seu e-mail","E-postanızı girin"],"Password (min. 6 characters)":["Mot de passe (min. 6 caractères)","كلمة المرور (6 أحرف على الأقل)","Contraseña (mín. 6 caracteres)","Passwort (mind. 6 Zeichen)","Password (min. 6 caratteri)","Senha (mín. 6 caracteres)","Şifre (en az 6 karakter)"],"Search users...":["Rechercher des utilisateurs...","ابحث عن مستخدمين...","Buscar usuarios...","Nutzer suchen...","Cerca utenti...","Pesquisar usuários...","Kullanıcı ara..."],"Add a comment...":["Ajouter un commentaire...","أضف تعليقًا...","Añade un comentario...","Kommentar hinzufügen...","Aggiungi un commento...","Adicione um comentário...","Yorum ekle..."],"Write a caption...":["Écrivez une légende...","اكتب تعليقًا توضيحيًا...","Escribe un pie de foto...","Schreibe eine Beschreibung...","Scrivi una didascalia...","Escreva uma legenda...","Bir açıklama yaz..."],"Settings and activity":["Paramètres et activité","الإعدادات والنشاط","Ajustes y actividad","Einstellungen und Aktivität","Impostazioni e attività","Configurações e atividade","Ayarlar ve etkinlik"],"Your activity":["Votre activité","نشاطك","Tu actividad","Deine Aktivität","La tua attività","Sua atividade","Etkinliğin"],"Account privacy":["Confidentialité du compte","خصوصية الحساب","Privacidad de la cuenta","Kontoprivatsphäre","Privacy dell'account","Privacidade da conta","Hesap gizliliği"],"Close friends":["Amis proches","الأصدقاء المقربون","Amigos cercanos","Enge Freunde","Amici stretti","Amigos próximos","Yakın arkadaşlar"],"Block":["Bloquer","حظر","Bloquear","Blockieren","Blocca","Bloquear","Engelle"],"Crossposting":["Publication croisée","النشر المتقاطع","Publicación cruzada","Cross-Posting","Crosspost","Publicação cruzada","Çapraz paylaşım"],"Stories, live & location":["Stories, direct et position","القصص والبث المباشر والموقع","Historias, en vivo y ubicación","Stories, Live & Standort","Storie, live e posizione","Stories, ao vivo e localização","Hikâyeler, canlı yayın ve konum"],"Verified tools":["Outils vérifiés","أدوات الحسابات الموثقة","Herramientas verificadas","Verifizierte Tools","Strumenti verificati","Ferramentas verificadas","Doğrulanmış araçlar"],"Auto response":["Réponse automatique","رد تلقائي","Respuesta automática","Automatische Antwort","Risposta automatica","Resposta automática","Otomatik yanıt"],"Administration":["Administration","الإدارة","Administración","Verwaltung","Amministrazione","Administração","Yönetim"],"Admin Server":["Serveur admin","خادم الإدارة","Servidor admin","Admin-Server","Server admin","Servidor admin","Yönetici sunucusu"],"Legal & safety":["Mentions légales et sécurité","الشؤون القانونية والأمان","Legal y seguridad","Rechtliches & Sicherheit","Note legali e sicurezza","Legal e segurança","Yasal ve güvenlik"],"Back up my data":["Sauvegarder mes données","نسخ بياناتي احتياطيًا","Hacer copia de mis datos","Meine Daten sichern","Esegui il backup dei miei dati","Fazer backup dos meus dados","Verilerimi yedekle"],"Restore from backup":["Restaurer depuis une sauvegarde","الاستعادة من نسخة احتياطية","Restaurar desde copia","Aus Sicherung wiederherstellen","Ripristina da backup","Restaurar do backup","Yedekten geri yükle"],"Delete my account":["Supprimer mon compte","حذف حسابي","Eliminar mi cuenta","Mein Konto löschen","Elimina il mio account","Excluir minha conta","Hesabımı sil"],"Session Controls":["Contrôles de session","عناصر التحكم في الجلسة","Controles de sesión","Sitzungssteuerung","Controlli sessione","Controles de sessão","Oturum denetimleri"],"Log out":["Se déconnecter","تسجيل الخروج","Cerrar sesión","Abmelden","Esci","Sair","Çıkış yap"],"Leave Sidebar":["Fermer le menu","إغلاق القائمة","Cerrar menú","Menü schließen","Chiudi menu","Fechar menu","Menüyü kapat"],"Verify my account":["Vérifier mon compte","توثيق حسابي","Verificar mi cuenta","Mein Konto verifizieren","Verifica il mio account","Verificar minha conta","Hesabımı doğrula"],"Change name":["Changer le nom","تغيير الاسم","Cambiar nombre","Namen ändern","Cambia nome","Alterar nome","Adı değiştir"],"Change Account Name":["Changer le nom du compte","تغيير اسم الحساب","Cambiar nombre de la cuenta","Kontonamen ändern","Cambia nome account","Alterar nome da conta","Hesap adını değiştir"],"Language":["Langue","اللغة","Idioma","Sprache","Lingua","Idioma","Dil"],"Swipe to choose your language":["Faites glisser pour choisir votre langue","اسحب لاختيار لغتك","Desliza para elegir tu idioma","Wische, um deine Sprache zu wählen","Scorri per scegliere la lingua","Deslize para escolher seu idioma","Dilini seçmek için kaydır"],"Close":["Fermer","إغلاق","Cerrar","Schließen","Chiudi","Fechar","Kapat"],"New post":["Nouvelle publication","منشور جديد","Nueva publicación","Neuer Beitrag","Nuovo post","Nova publicação","Yeni gönderi"],"New story":["Nouvelle story","قصة جديدة","Nueva historia","Neue Story","Nuova storia","Nova story","Yeni hikâye"],"New Full":["Nouveau Full","Full جديد","Nuevo Full","Neuer Full","Nuovo Full","Novo Full","Yeni Full"],"Add a public note":["Ajouter une note publique","أضف ملاحظة عامة","Añade una nota pública","Öffentliche Notiz hinzufügen","Aggiungi una nota pubblica","Adicione uma nota pública","Herkese açık not ekle"],"Cancel":["Annuler","إلغاء","Cancelar","Abbrechen","Annulla","Cancelar","İptal"],"Save":["Enregistrer","حفظ","Guardar","Speichern","Salva","Salvar","Kaydet"],"Delete":["Supprimer","حذف","Eliminar","Löschen","Elimina","Excluir","Sil"],"Modify":["Modifier","تعديل","Modificar","Bearbeiten","Modifica","Modificar","Düzenle"],"Not now":["Pas maintenant","ليس الآن","Ahora no","Nicht jetzt","Non ora","Agora não","Şimdi değil"],"Yes, delete it":["Oui, supprimer","نعم، احذفه","Sí, eliminar","Ja, löschen","Sì, elimina","Sim, excluir","Evet, sil"],"What do you want to do?":["Que voulez-vous faire ?","ماذا تريد أن تفعل؟","¿Qué quieres hacer?","Was möchtest du tun?","Cosa vuoi fare?","O que você quer fazer?","Ne yapmak istiyorsun?"],"Your Full":["Votre Full","الـ Full الخاص بك","Tu Full","Dein Full","Il tuo Full","Seu Full","Full'ün"],"Delete this Full?":["Supprimer ce Full ?","حذف هذا الـ Full؟","¿Eliminar este Full?","Diesen Full löschen?","Eliminare questo Full?","Excluir este Full?","Bu Full silinsin mi?"],"This cannot be undone.":["Cette action est irréversible.","لا يمكن التراجع عن هذا.","Esto no se puede deshacer.","Das kann nicht rückgängig gemacht werden.","Non può essere annullato.","Isso não pode ser desfeito.","Bu geri alınamaz."],"Modify your Full":["Modifier votre Full","تعديل الـ Full الخاص بك","Modifica tu Full","Deinen Full bearbeiten","Modifica il tuo Full","Modifique seu Full","Full'ünü düzenle"],"Caption":["Légende","وصف","Pie de foto","Beschreibung","Didascalia","Legenda","Açıklama"],"Download fullview":["Télécharger fullview","تنزيل fullview","Descargar fullview","fullview herunterladen","Scarica fullview","Baixar fullview","fullview'i indir"],"Choose your phone":["Choisissez votre téléphone","اختر هاتفك","Elige tu teléfono","Wähle dein Handy","Scegli il tuo telefono","Escolha seu celular","Telefonunu seç"],"Report content":["Signaler le contenu","الإبلاغ عن المحتوى","Denunciar contenido","Inhalt melden","Segnala contenuto","Denunciar conteúdo","İçeriği bildir"],"Send report":["Envoyer le signalement","إرسال البلاغ","Enviar denuncia","Meldung senden","Invia segnalazione","Enviar denúncia","Bildirimi gönder"],"Reason":["Motif","السبب","Motivo","Grund","Motivo","Motivo","Neden"],"Details (optional)":["Détails (facultatif)","التفاصيل (اختياري)","Detalles (opcional)","Details (optional)","Dettagli (facoltativo)","Detalhes (opcional)","Ayrıntılar (isteğe bağlı)"],"Spam or scam":["Spam ou arnaque","بريد مزعج أو احتيال","Spam o estafa","Spam oder Betrug","Spam o truffa","Spam ou golpe","Spam veya dolandırıcılık"],"Harassment or hate":["Harcèlement ou haine","تحرش أو كراهية","Acoso u odio","Belästigung oder Hass","Molestie o odio","Assédio ou ódio","Taciz veya nefret"],"Nudity or sexual content":["Nudité ou contenu sexuel","عري أو محتوى جنسي","Desnudez o contenido sexual","Nacktheit oder sexuelle Inhalte","Nudità o contenuti sessuali","Nudez ou conteúdo sexual","Çıplaklık veya cinsel içerik"],"Violence or dangerous acts":["Violence ou actes dangereux","عنف أو أفعال خطيرة","Violencia o actos peligrosos","Gewalt oder gefährliche Handlungen","Violenza o atti pericolosi","Violência ou atos perigosos","Şiddet veya tehlikeli eylemler"],"Illegal activity":["Activité illégale","نشاط غير قانوني","Actividad ilegal","Illegale Aktivität","Attività illegale","Atividade ilegal","Yasa dışı etkinlik"],"Impersonation":["Usurpation d'identité","انتحال الهوية","Suplantación de identidad","Identitätsmissbrauch","Furto d'identità","Falsidade ideológica","Kimliğe bürünme"],"Involves a minor in danger":["Concerne un mineur en danger","يتعلق بقاصر في خطر","Implica a un menor en peligro","Betrifft einen Minderjährigen in Gefahr","Riguarda un minore in pericolo","Envolve um menor em perigo","Tehlikedeki bir çocuğu ilgilendiriyor"],"Sexual content involving a minor":["Contenu sexuel impliquant un mineur","محتوى جنسي يتضمن قاصرًا","Contenido sexual con un menor","Sexuelle Inhalte mit Minderjährigen","Contenuti sessuali con minori","Conteúdo sexual com menor","Reşit olmayan biriyle cinsel içerik"],"Other":["Autre","أخرى","Otro","Andere","Altro","Outro","Diğer"],"Create Publication":["Créer une publication","إنشاء منشور","Crear publicación","Beitrag erstellen","Crea post","Criar publicação","Gönderi oluştur"],"Share Story":["Partager la story","مشاركة القصة","Compartir historia","Story teilen","Condividi storia","Compartilhar story","Hikâyeyi paylaş"],"Share Full":["Partager le Full","مشاركة الـ Full","Compartir Full","Full teilen","Condividi Full","Compartilhar Full","Full'ü paylaş"],"Publish":["Publier","نشر","Publicar","Veröffentlichen","Pubblica","Publicar","Yayınla"],"Choose Video":["Choisir une vidéo","اختر فيديو","Elegir vídeo","Video wählen","Scegli video","Escolher vídeo","Video seç"],"Choose Photo":["Choisir une photo","اختر صورة","Elegir foto","Foto wählen","Scegli foto","Escolher foto","Fotoğraf seç"],"Notifications & Friend Requests":["Notifications et demandes d'amis","الإشعارات وطلبات الصداقة","Notificaciones y solicitudes de amistad","Benachrichtigungen & Freundschaftsanfragen","Notifiche e richieste di amicizia","Notificações e pedidos de amizade","Bildirimler ve arkadaşlık istekleri"],"Explore Users":["Explorer les utilisateurs","استكشف المستخدمين","Explorar usuarios","Nutzer entdecken","Esplora utenti","Explorar usuários","Kullanıcıları keşfet"],"Friends' Stories":["Stories des amis","قصص الأصدقاء","Historias de amigos","Stories von Freunden","Storie degli amici","Stories dos amigos","Arkadaşların hikâyeleri"],"Add Public Story":["Ajouter une story publique","أضف قصة عامة","Añadir historia pública","Öffentliche Story hinzufügen","Aggiungi storia pubblica","Adicionar story pública","Herkese açık hikâye ekle"],"Delete everything":["Tout supprimer","حذف كل شيء","Eliminar todo","Alles löschen","Elimina tutto","Excluir tudo","Her şeyi sil"],"Exit":["Quitter","خروج","Salir","Beenden","Esci","Sair","Çık"],"Back":["Retour","رجوع","Atrás","Zurück","Indietro","Voltar","Geri"],"Send":["Envoyer","إرسال","Enviar","Senden","Invia","Enviar","Gönder"],"Verification password":["Mot de passe de vérification","كلمة مرور التوثيق","Contraseña de verificación","Verifizierungspasswort","Password di verifica","Senha de verificação","Doğrulama şifresi"],"Confirm your password":["Confirmez votre mot de passe","أكّد كلمة المرور","Confirma tu contraseña","Bestätige dein Passwort","Conferma la password","Confirme sua senha","Şifreni onayla"],"Your password":["Votre mot de passe","كلمة مرورك","Tu contraseña","Dein Passwort","La tua password","Sua senha","Şifren"],"Your email address":["Votre adresse e-mail","عنوان بريدك الإلكتروني","Tu correo electrónico","Deine E-Mail-Adresse","Il tuo indirizzo email","Seu e-mail","E-posta adresin"],"Notification":["Notification","إشعار","Notificación","Benachrichtigung","Notifica","Notificação","Bildirim"],"Verified badge next to your name":["Badge vérifié à côté de votre nom","شارة التوثيق بجانب اسمك","Insignia de verificado junto a tu nombre","Verifiziert-Abzeichen neben deinem Namen","Badge verificato accanto al tuo nome","Selo de verificado ao lado do seu nome","Adının yanında doğrulama rozeti"],"Verified tools, like Auto response":["Outils vérifiés, comme la réponse automatique","أدوات موثقة مثل الرد التلقائي","Herramientas verificadas, como la respuesta automática","Verifizierte Tools, z. B. automatische Antwort","Strumenti verificati, come la risposta automatica","Ferramentas verificadas, como resposta automática","Doğrulanmış araçlar, örneğin otomatik yanıt"],"One-time payment":["Paiement unique","دفعة لمرة واحدة","Pago único","Einmalige Zahlung","Pagamento una tantum","Pagamento único","Tek seferlik ödeme"],"Demo version: your account and content are saved only on this device and browser. Use":["Version démo : votre compte et votre contenu sont enregistrés uniquement sur cet appareil et ce navigateur. Utilisez","نسخة تجريبية: يتم حفظ حسابك ومحتواك على هذا الجهاز والمتصفح فقط. استخدم","Versión de prueba: tu cuenta y tu contenido se guardan solo en este dispositivo y navegador. Usa","Demoversion: Dein Konto und deine Inhalte werden nur auf diesem Gerät und in diesem Browser gespeichert. Nutze","Versione demo: il tuo account e i tuoi contenuti sono salvati solo su questo dispositivo e browser. Usa","Versão de demonstração: sua conta e seu conteúdo são salvos apenas neste dispositivo e navegador. Use","Demo sürümü: hesabın ve içeriklerin yalnızca bu cihazda ve tarayıcıda saklanır. Şunu kullan:"],"in your profile menu to keep a copy.":["dans votre menu de profil pour en garder une copie.","في قائمة ملفك الشخصي للاحتفاظ بنسخة.","en el menú de tu perfil para conservar una copia.","im Profilmenü, um eine Kopie zu behalten.","nel menu del profilo per conservare una copia.","no menu do seu perfil para guardar uma cópia.","profil menünde bir kopya saklamak için."]};
+Object.assign(I18N, {
+"fullview is 100% free right now: every feature, including Fulls and account verification, is available at no cost. No payment is ever requested.":["fullview est actuellement 100 % gratuit : toutes les fonctionnalités, y compris les Fulls et la vérification du compte, sont accessibles sans frais. Aucun paiement n'est jamais demandé.","fullview مجاني بالكامل حاليًا: جميع الميزات، بما فيها الـ Fulls وتوثيق الحساب، متاحة بدون أي تكلفة. لا يُطلب أي دفع على الإطلاق.","fullview es 100 % gratuito por ahora: todas las funciones, incluidos los Fulls y la verificación de la cuenta, están disponibles sin coste. Nunca se pide ningún pago.","fullview ist derzeit 100 % kostenlos: Alle Funktionen, einschließlich Fulls und Kontoverifizierung, sind kostenfrei verfügbar. Es wird keine Zahlung verlangt.","fullview è attualmente gratuito al 100%: tutte le funzioni, inclusi i Full e la verifica dell'account, sono disponibili senza costi. Non viene mai richiesto alcun pagamento.","O fullview é 100% gratuito no momento: todos os recursos, incluindo Fulls e verificação de conta, estão disponíveis sem custo. Nenhum pagamento é solicitado.","fullview şu anda %100 ücretsizdir: Full'ler ve hesap doğrulaması dahil tüm özellikler ücretsiz sunulur. Hiçbir ödeme istenmez."],
+"Your account and content are saved online and cached on this device. Use":["Votre compte et votre contenu sont enregistrés en ligne et mis en cache sur cet appareil. Utilisez","يتم حفظ حسابك ومحتواك عبر الإنترنت وتخزين نسخة مؤقتة على هذا الجهاز. استخدم","Tu cuenta y tu contenido se guardan en línea y en caché en este dispositivo. Usa","Dein Konto und deine Inhalte werden online gespeichert und auf diesem Gerät zwischengespeichert. Nutze","Il tuo account e i tuoi contenuti sono salvati online e in cache su questo dispositivo. Usa","Sua conta e seu conteúdo são salvos on-line e em cache neste dispositivo. Use","Hesabın ve içeriklerin çevrimiçi kaydedilir ve bu cihazda önbelleğe alınır. Şunu kullan:"],
+"Verification is free of charge. The verified badge is granted by fullview administrators. Once your account is verified, use Log in as verified. No payment is ever requested.":["La vérification est gratuite. Le badge vérifié est attribué par les administrateurs de fullview. Une fois votre compte vérifié, utilisez Se connecter en tant que vérifié. Aucun paiement n'est jamais demandé.","التوثيق مجاني. تمنح شارة التوثيق إدارة fullview. بعد توثيق حسابك، استخدم تسجيل الدخول كحساب موثّق. لا يُطلب أي دفع على الإطلاق.","La verificación es gratuita. La insignia de verificado la conceden los administradores de fullview. Cuando tu cuenta esté verificada, usa Iniciar sesión como verificado. Nunca se pide ningún pago.","Die Verifizierung ist kostenlos. Das Verifiziert-Abzeichen wird von den fullview-Administratoren vergeben. Sobald dein Konto verifiziert ist, nutze Als verifiziert anmelden. Es wird keine Zahlung verlangt.","La verifica è gratuita. Il badge verificato viene assegnato dagli amministratori di fullview. Quando il tuo account è verificato, usa Accedi come verificato. Non viene mai richiesto alcun pagamento.","A verificação é gratuita. O selo de verificado é concedido pelos administradores do fullview. Quando sua conta estiver verificada, use Entrar como verificado. Nenhum pagamento é solicitado.","Doğrulama ücretsizdir. Doğrulama rozeti fullview yöneticileri tarafından verilir. Hesabın doğrulandığında Doğrulanmış olarak giriş yap seçeneğini kullan. Hiçbir ödeme istenmez."],
+"Free >":["Gratuit >","مجاني >","Gratis >","Gratis >","Gratis >","Grátis >","Ücretsiz >"],
+"Deleting…":["Suppression…","جارٍ الحذف…","Eliminando…","Wird gelöscht…","Eliminazione…","Excluindo…","Siliniyor…"]
+});
 let fvLang = 'en'; try { fvLang = localStorage.getItem('fv_lang') || 'en'; } catch(e){}
 if (!LANGS.some(l => l[0] === fvLang)) fvLang = 'en';
 const i18nOrig = new WeakMap(), i18nSet = new WeakMap();
