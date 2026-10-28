@@ -6935,16 +6935,14 @@ window.publishMinim = async function(){
   };
 });
 
-/* ===== Followers counter (counts accepted connections, including yourself) ===== */
+/* ===== Followers counter (counts people who follow you) ===== */
 function updateFollowerCount(){
   try {
     const el = document.getElementById('profile-followers');
     if (!el || !currentUser) return;
     const ids = new Set();
     (friendRequests || []).forEach(r => {
-      if (r.status !== 'accepted') return;
-      if (r.fromUserId === currentUser.id) ids.add(r.toUserId);
-      else if (r.toUserId === currentUser.id) ids.add(r.fromUserId);
+      if (r.status === 'accepted' && r.toUserId === currentUser.id) ids.add(r.fromUserId);   // only people who follow me
     });
     el.innerHTML = '<b>' + ids.size + '</b> followers';
   } catch(e){}
@@ -7222,7 +7220,8 @@ function openUserProfileByName(name){
     '<button type="button" class="ac-chip" onclick="acSetFilter(\'like\',this)">❤️ Likes</button>'+
     '<button type="button" class="ac-chip" onclick="acSetFilter(\'repost\',this)">🔁 Reposts</button>'+
     '<button type="button" class="ac-chip" onclick="acSetFilter(\'comment\',this)">💬 Comments</button>'+
-    '<button type="button" class="ac-chip" onclick="acSetFilter(\'creact\',this)">❤️ Comment reactions</button></div><div id="ac-list"></div>';
+    '<button type="button" class="ac-chip" onclick="acSetFilter(\'creact\',this)">❤️ Comment reactions</button>'+
+    '<button type="button" class="ac-chip" onclick="acSetFilter(\'follow\',this)">👤 Follows</button></div><div id="ac-list"></div>';
   document.getElementById('reels-screen').insertAdjacentElement('afterend', sc);
 
   const bell='<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
@@ -7298,21 +7297,24 @@ async function acLoad(){
 function acDraw(){
   const list = document.getElementById('ac-list'); if (!list) return;
   const rows = acCache.filter(r => acFilter === 'all' || r.t === acFilter);
-  if (!rows.length){ list.innerHTML = '<div class="ac-empty">Nothing here yet.<br>When people like, repost or comment on your content, or react to your comments, you will see it here.</div>'; return; }
+  if (!rows.length){ list.innerHTML = '<div class="ac-empty">Nothing here yet.<br>When people follow you, like, repost or comment on your content, or react to your comments, you will see it here.</div>'; return; }
   const cut = t => esc((t || '').slice(0, 60)) + ((t || '').length > 60 ? '…' : '');
   list.innerHTML = rows.map(r => {
     const u = users.find(x => x.name === r.name);
     const av = u && u.avatarImage ? '<img src="'+esc(u.avatarImage)+'" class="avatar" style="object-fit:cover;" alt="">'
       : '<div class="avatar" style="background:'+esc(u ? u.avatarColor : '#6d4aff')+';">'+esc((r.name || '?')[0].toUpperCase())+'</div>';
     const lab = AC_LABEL[r.kind] || 'Full';
-    const what = r.t === 'like' ? 'liked your '+lab : r.t === 'repost' ? 'reposted your '+lab
+    const what = r.t === 'follow' ? (r.status === 'pending' ? 'wants to follow you' : 'started following you')
+      : r.t === 'like' ? 'liked your '+lab : r.t === 'repost' ? 'reposted your '+lab
       : r.t === 'comment' ? 'commented on your '+lab+': <i>“'+cut(r.text)+'”</i>'
       : 'reacted ❤️ to your comment <i>“'+cut(r.text)+'”</i>';
     let it = null; try { it = r.m || (r.kind ? findItem(r.kind, r.id) : null); } catch(e){}
     const src = it && (it.thumb || it.image);
     const thumb = src ? '<img class="ac-thumb" src="'+esc(src)+'" alt=""'+((r.kind === 'minim' || r.m) ? ' onclick="openMinim('+Number(r.id || r.m.id)+')"' : '')+'>' : '';
     return '<div class="ac-row"><span data-n="'+esc(r.name)+'" onclick="openUserProfileByName(this.dataset.n)">'+av+'</span>'+
-      '<div class="ac-txt"><b>'+esc(r.name)+'</b> '+what+'<div class="ac-time">'+timeAgo(r.ts)+'</div></div>'+thumb+'</div>';
+      '<div class="ac-txt"><b>'+esc(r.name)+'</b> '+what+'<div class="ac-time">'+timeAgo(r.ts)+'</div>'+
+      (r.t === 'follow' && r.status === 'pending' ? '<div style="display:flex;gap:6px;margin-top:6px;"><button type="button" class="btn secondary" style="background:var(--primary);color:#fff;padding:5px 12px;" data-u="'+esc(r.uid)+'" onclick="acFollowAnswer(this.dataset.u,true)">Accept</button><button type="button" class="btn secondary" style="padding:5px 12px;" data-u="'+esc(r.uid)+'" onclick="acFollowAnswer(this.dataset.u,false)">Decline</button></div>' : '')+
+      '</div>'+thumb+'</div>';
   }).join('');
 }
 
@@ -7649,6 +7651,104 @@ function openLangModal(){
   document.head.appendChild(st);
 })();
 setLang(fvLang);
+
+/* ===== Public name changes, server-side cooldown, live follow activity ===== */
+// 1) Name cooldown comes from the server (profiles.last_name_change), so it cannot be skipped by clearing the browser
+const _submitName5 = window.submitNewName;
+window.submitNewName = async function () {
+  if (realUser()) {
+    try {
+      const r = await sb.from('profiles').select('last_name_change').eq('id', currentUser.id).maybeSingle();
+      if (!r.error) {
+        const k = 'lastNameChangeTime_' + currentUser.id;
+        if (r.data && r.data.last_name_change) localStorage.setItem(k, String(Date.parse(r.data.last_name_change)));
+        else localStorage.removeItem(k);
+      }
+    } catch (e) {}
+  }
+  return _submitName5.apply(this, arguments);
+};
+
+// 2) Everyone sees a new name (or photo, badge...) the moment a profile changes
+let _profTimer = null;
+function onProfileChanged(row) {
+  if (!row || !currentUser) return;
+  const u = users.find(x => x.id === row.id);
+  const nameChanged = !u || u.name !== row.name;
+  if (u) {
+    u.name = row.name; u.avatarColor = row.avatar_color || u.avatarColor; u.avatarImage = row.avatar_url || null;
+    u.publicNote = row.public_note || ''; u.isPrivate = !!row.is_private; u.verified = !!row.verified; u.banned = !!row.banned;
+  }
+  if (row.id === currentUser.id) return;
+  clearTimeout(_profTimer);
+  _profTimer = setTimeout(async () => {
+    try {
+      await refreshUsers();                 // new names for everyone
+      if (nameChanged) await loadContent(); // posts, Fulls, likes, comments, chats and blocks pick up the new name
+      else renderFeed();
+      handleSearch(searchValue()); renderStories(); updateFollowerCount();
+      if (currentTabName === 'activity') renderActivity();
+      const cur = window.currentChatId;
+      if (cur && cur !== 'full-ai') renderChatMessages(cur); else if (!cur && currentTabName === 'chats') renderChatList();
+    } catch (e) {}
+  }, 500);
+}
+
+// 3) Live "followed you" notifications
+async function onFollowedMe(row) {
+  if (!row || !currentUser || row.requester_id === currentUser.id) return;
+  let name = (users.find(u => u.id === row.requester_id) || {}).name;
+  if (!name) { await refreshUsers(); name = (users.find(u => u.id === row.requester_id) || {}).name; }
+  fvToast(name || 'Someone', row.status === 'accepted' ? 'started following you' : 'wants to follow you');
+  try { await loadSocial(); } catch (e) {}      // updates the followers counter
+  if (currentTabName === 'activity') renderActivity(); else fvBadge(true);
+}
+
+let _profCh = null, _profUid = null;
+function startProfileSub() {
+  try {
+    if (!sb) return;
+    if (!currentUser || !realUser()) { if (_profCh) { sb.removeChannel(_profCh); _profCh = null; _profUid = null; } return; }
+    const alive = _profCh && sb.getChannels().some(c => c === _profCh);
+    if (alive && _profUid === currentUser.id) return;
+    if (_profCh) { try { sb.removeChannel(_profCh); } catch (e) {} }
+    const me = currentUser.id; _profUid = me;
+    _profCh = sb.channel('fv-profiles')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, p => onProfileChanged(p.new))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, p => onProfileChanged(p.new))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendships', filter: 'addressee_id=eq.' + me }, p => onFollowedMe(p.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'friendships', filter: 'addressee_id=eq.' + me }, p => {
+        // a public account auto-accepts a moment after the request: show it as "started following you"
+        if (p.new && p.new.status === 'accepted') { try { loadSocial(); } catch (e) {} if (currentTabName === 'activity') renderActivity(); }
+      })
+      .subscribe();
+  } catch (e) {}
+}
+setInterval(startProfileSub, 4000);
+setTimeout(startProfileSub, 1500);
+
+// 4) Follows in the Activity list
+const _acLoad5 = acLoad;
+acLoad = async function () {
+  const out = await _acLoad5();
+  if (!realUser()) return out;
+  try {
+    const me = currentUser.id;
+    let r = await sb.from('friendships').select('requester_id,status,created_at').eq('addressee_id', me).order('created_at', { ascending: false }).limit(100);
+    if (r.error) r = await sb.from('friendships').select('requester_id,status').eq('addressee_id', me).limit(100);   // created_at missing: run follow_and_names.sql
+    (r.data || []).forEach(x => {
+      const u = users.find(v => v.id === x.requester_id); if (!u || u.banned || blockedUsers.includes(u.name)) return;
+      out.push({ t: 'follow', uid: x.requester_id, status: x.status, name: u.name, ts: x.created_at ? Date.parse(x.created_at) : 0 });
+    });
+    out.sort((a, b) => b.ts - a.ts);
+  } catch (e) {}
+  return out;
+};
+window.acFollowAnswer = async function (uid, accept) {
+  if (accept) await window.acceptFriendRequest(uid); else await window.declineFriendRequest(uid);
+  try { await loadSocial(); } catch (e) {}
+  renderActivity();
+};
 </script>
 
 </body>
