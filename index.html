@@ -5833,7 +5833,7 @@ window.completeRegistration = async function () {
 
   let r = await sb.auth.signInWithPassword({ email, password });
   if (!r.error) { delete loginFails[email]; if (await finishLogin(r.data.user)) document.getElementById('reg-password').value = ''; return; }
-  if (/not confirmed/i.test(r.error.message)) { showMsgBox('Please confirm your email first: open the link we sent you, then log in.'); return; }
+  if (/not confirmed/i.test(r.error.message)) { window.__awaitConfirm = { email, password }; return; }
   if (!/invalid login/i.test(r.error.message)) { showMsgBox(r.error.message); return; }
 
   // No matching login: try to create a new account
@@ -5849,10 +5849,108 @@ window.completeRegistration = async function () {
     return;
   }
   if (s.data.user && s.data.user.identities && s.data.user.identities.length === 0) { loginFailed(email); showMsgBox('Wrong password for this account.'); return; }
-  if (!s.data.session) { showMsgBox('Account created! Check your email and open the confirmation link, then log in.'); return; }
+  if (!s.data.session) { window.__awaitConfirm = { email, password }; return; }
   document.getElementById('reg-password').value = '';
   await finishLogin(s.data.user);
 };
+
+/* ---- Skeleton screen: shown while signing in and while waiting for the email confirmation ---- */
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `
+  #skel-wait{position:absolute;inset:0;z-index:400;background:var(--card-bg,#fff);display:none;flex-direction:column;overflow:hidden}
+  #skel-wait.show{display:flex}
+  .skw-top{padding:22px 20px 10px;text-align:center}
+  .skw-spin{width:26px;height:26px;border-radius:50%;border:3px solid #e3e6ea;border-top-color:var(--primary,#0095f6);margin:0 auto 10px;animation:skwspin .8s linear infinite}
+  .skw-title{font-weight:700;font-size:1.05rem;color:var(--text,#262626)}
+  .skw-sub{font-size:.84rem;color:var(--secondary-text,#8e8e8e);margin-top:4px;line-height:1.4;overflow-wrap:anywhere}
+  .skw-actions{display:none;gap:8px;justify-content:center;margin-top:12px}
+  #skel-wait.confirm .skw-actions{display:flex}
+  .skw-feed{padding:10px 16px;display:flex;flex-direction:column;gap:22px;flex:1;overflow:hidden}
+  .skw-card{display:flex;flex-direction:column;gap:10px}
+  .skw-row{display:flex;align-items:center;gap:10px}
+  .sk{background:#e9ecef;border-radius:8px;position:relative;overflow:hidden}
+  .sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:skwshim 1.4s infinite}
+  .sk.c{border-radius:50%;width:38px;height:38px;flex:none}
+  .sk.l{height:11px}
+  .sk.photo{height:210px;border-radius:12px}
+  .sk.btn{height:34px;border-radius:10px}
+  @keyframes skwshim{to{transform:translateX(100%)}}
+  @keyframes skwspin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.sk::after,.skw-spin{animation:none}}
+  `;
+  document.head.appendChild(css);
+
+  const card = '<div class="skw-card"><div class="skw-row"><div class="sk c"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="sk l" style="width:45%"></div><div class="sk l" style="width:28%"></div></div></div><div class="sk photo"></div><div class="sk l" style="width:92%"></div><div class="sk l" style="width:64%"></div></div>';
+  let el = null, timer = null, ctx = null;
+
+  function build() {
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'skel-wait';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<div class="skw-top"><div class="skw-spin"></div><div class="skw-title" id="skw-title"></div><div class="skw-sub" id="skw-sub"></div>' +
+      '<div class="skw-actions"><button class="btn secondary" id="skw-resend" type="button">Resend email</button><button class="btn secondary" id="skw-back" type="button">Back</button></div></div>' +
+      '<div class="skw-feed">' + card + card + '</div>';
+    (document.getElementById('app') || document.body).appendChild(el);
+    el.querySelector('#skw-back').onclick = function () { window.hideSkeleton(); };
+    el.querySelector('#skw-resend').onclick = async function () {
+      if (!ctx || !sb) return;
+      const b = this; b.disabled = true;
+      try { const r = await sb.auth.resend({ type: 'signup', email: ctx.email }); b.textContent = r.error ? 'Try again later' : 'Email sent ✓'; }
+      catch (e) { b.textContent = 'Try again later'; }
+      setTimeout(function () { b.disabled = false; b.textContent = 'Resend email'; }, 30000);
+    };
+    return el;
+  }
+
+  window.showSkeleton = function (title, sub, confirmMode) {
+    build();
+    el.querySelector('#skw-title').textContent = title || 'Loading…';
+    el.querySelector('#skw-sub').textContent = sub || '';
+    el.classList.toggle('confirm', !!confirmMode);
+    el.classList.add('show');
+  };
+  window.hideSkeleton = function () {
+    if (timer) { clearInterval(timer); timer = null; }
+    ctx = null;
+    if (el) el.classList.remove('show');
+  };
+
+  // Waiting for the email link: show the skeleton and check every 4 s whether the account is confirmed.
+  window.waitForEmailConfirm = function (email, password) {
+    ctx = { email: email, password: password };
+    window.showSkeleton('Check your email ✉️', 'We sent a confirmation link to ' + email + '. Open it and this screen continues by itself.', true);
+    if (timer) clearInterval(timer);
+    let busy = false, tries = 0;
+    timer = setInterval(async function () {
+      if (busy || !ctx) return;
+      if (++tries > 225) { window.hideSkeleton(); showMsgBox('Still waiting for the confirmation. Open the link in your email, then log in.'); return; } // ~15 min
+      busy = true;
+      try {
+        const r = await sb.auth.signInWithPassword({ email: ctx.email, password: ctx.password });
+        if (!r.error) {
+          window.hideSkeleton();
+          document.getElementById('reg-password').value = '';
+          await finishLogin(r.data.user);
+        }
+      } catch (e) {} finally { busy = false; }
+    }, 4000);
+  };
+
+  // Wrap the sign up / log in so the skeleton shows during the request and during the email wait.
+  const orig = window.completeRegistration;
+  window.completeRegistration = async function () {
+    window.__awaitConfirm = null;
+    window.showSkeleton('Signing you in…', '', false);
+    try { await orig(); }
+    catch (e) { console.error(e); }
+    finally { if (!window.__awaitConfirm) window.hideSkeleton(); }
+    const w = window.__awaitConfirm; window.__awaitConfirm = null;
+    if (w) window.waitForEmailConfirm(w.email, w.password);
+  };
+})();
 
 /* ---- Verified login: account must already be verified by an admin ---- */
 window.submitVerifyLogin = async function () {
