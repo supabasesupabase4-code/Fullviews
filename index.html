@@ -13,9 +13,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#6d4aff">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff7a59'/%3E%3Cstop offset='.5' stop-color='%23ff3d8b'/%3E%3Cstop offset='1' stop-color='%237a4dff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='48' height='48' rx='14' fill='url(%23g)'/%3E%3Ccircle cx='24' cy='24' r='11' fill='none' stroke='white' stroke-width='4'/%3E%3Ccircle cx='24' cy='24' r='4' fill='white'/%3E%3C/svg%3E">
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Sora is served from our own server (fonts/Sora.woff2), not from Google: no visitor IP is sent to a third party. */
+        @font-face{font-family:'Sora';font-style:normal;font-weight:100 800;font-display:swap;src:local('Sora'),url('fonts/Sora.woff2') format('woff2')}
         :root {
             --primary: #0095f6;
             --bg: #fafafa;
@@ -1153,7 +1153,17 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <input type="password" id="reg-password" class="input-field" maxlength="100" placeholder="Password (min. 6 characters)">
             </div>
 
-            <label class="auth-consent"><input type="checkbox" id="reg-consent"><span>I am at least 13 years old and I accept the <a onclick="openLegal('terms')">Terms of Use</a> and the <a onclick="openLegal('privacy')">Privacy Policy</a>.</span></label>
+            <div class="form-group">
+                <label>Date of birth <span style="font-weight:400;color:var(--secondary-text)">(only for new accounts)</span></label>
+                <div class="dob-row">
+                    <input type="text" id="reg-dd" class="input-field" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="DD" autocomplete="bday-day" aria-label="Day of birth">
+                    <input type="text" id="reg-mm" class="input-field" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="MM" autocomplete="bday-month" aria-label="Month of birth">
+                    <input type="text" id="reg-yyyy" class="input-field" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="YYYY" autocomplete="bday-year" aria-label="Year of birth">
+                </div>
+                <div style="font-size:.72rem;color:var(--secondary-text);margin-top:4px">Used once to check your age. We do not store it.</div>
+            </div>
+
+            <label class="auth-consent"><input type="checkbox" id="reg-consent"><span>I accept the <a onclick="openLegal('terms')">Terms of Use</a> and the <a onclick="openLegal('privacy')">Privacy Policy</a>.</span></label>
             <button class="btn" onclick="completeRegistration()">Start fullview</button>
             <button class="btn secondary" id="dl-open-btn" style="margin-top:10px;width:100%;max-width:100%;" onclick="openModal('download-modal')">⬇ Download the app</button>
         </div>
@@ -5526,7 +5536,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         const CONTACT_EMAIL = '';
         const LEGAL = {
             privacy: { title: 'Privacy Policy', html: `
-                <p><b>Last updated: October 27, 2026.</b></p>
+                <p><b>Last updated: October 29, 2026.</b></p>
                 <p>This policy explains what personal data fullview collects, where it is stored, who else handles it, and how you can control or erase it. By creating an account you confirm that you have read it.</p>
 
                 <h4>1. Data we process</h4>
@@ -5548,11 +5558,12 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <h4>3. Third-party services</h4>
                 <ul>
                 <li><b>Supabase</b> hosts the database, authentication and file storage and processes your data on our behalf.</li>
-                <li><b>jsDelivr (cdn.jsdelivr.net)</b> delivers the Supabase JavaScript library; your IP address is visible to it when the app loads.</li>
-                <li><b>Google Fonts (fonts.googleapis.com, fonts.gstatic.com)</b> delivers the app fonts; your IP address is visible to Google when the app loads.</li>
+                <li><b>jsDelivr (cdn.jsdelivr.net)</b> delivers the Supabase JavaScript library when the app loads, and the image-safety and math helper libraries when those features are first used; your IP address is visible to it.</li>
+                <li><b>Fonts</b> are served from our own server, so no font provider receives your IP address.</li>
                 <li><b>YouTube:</b> the Listen links on songs open a YouTube search in a new tab only when you tap them. fullview does not host that music.</li>
                 <li>Your microphone is used only while you record a voice message, and your camera or files only when you choose to add a photo or video.</li></ul>
-                <p>fullview contains no advertising and no analytics trackers, and we do not sell your data.</p>
+                <p>fullview contains no advertising, no analytics trackers and <b>no session recording or screen replay tools</b>, and we do not sell your data.</p>
+                <p><b>Emails:</b> we only send account emails (such as the confirmation link). We send no marketing emails. If that ever changes, every such email will contain a working unsubscribe link and we will honour it within 10 days.</p>
 
                 <h4>4. How long we keep it</h4>
                 <p>We keep your data until you delete it or delete your account. Server backups kept by the hosting provider may hold copies for a limited time before they are overwritten.</p>
@@ -5565,7 +5576,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <li>Depending on where you live (for example under the GDPR), you may also have the rights to object, restrict processing, or complain to your data protection authority. To use a right we cannot offer in the app, contact us (see below).</li></ul>
 
                 <h4>6. Children</h4>
-                <p>fullview is not for children under 13. Creating an account requires you to confirm that you are at least 13 years old. If we learn that an account belongs to a child under 13, we will delete it and its content.</p>
+                <p>fullview is not for children under 13. When you create an account we ask for your date of birth to check your age; we use it only for that check and do not store it. If we learn that an account belongs to a child under 13, we will delete it and its content.</p>
 
                 <h4>7. Security</h4>
                 <p>Connections to Supabase use HTTPS and passwords are hashed. No online service is perfectly secure, so please choose a strong, unique password.</p>
@@ -5574,7 +5585,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <p>We may update this policy and will change the date above when we do.</p>
                 <p>${CONTACT_EMAIL ? 'Contact: ' + esc(CONTACT_EMAIL) : 'To reach us, use the 🚩 Report button on any post, Full or profile.'}</p>` },
             terms: { title: 'Terms of Use', html: `
-                <p><b>Last updated: October 27, 2026.</b></p>
+                <p><b>Last updated: October 29, 2026.</b></p>
 
                 <h4>1. Who can use fullview</h4>
                 <p><b>You must be at least 13 years old.</b> You confirm this when you create an account or log in. If you are under 13 you must not use fullview, and we will delete any account we find belongs to a child under 13. If the law where you live requires a parent or guardian to agree to your use of online services at your age, you must have that permission. You are responsible for your account and for keeping your password private.</p>
@@ -5713,13 +5724,56 @@ const sbReady = !/^PASTE/.test(SUPABASE_ANON_KEY) && !!(window.supabase);
 const sb = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
 const PROFILE_COLS = 'id,name,avatar_color,avatar_url,public_note,is_private,verified,banned,is_admin,crosspost,last_name_change,created_at';
 
-/* ---- Age (13+) and terms gate: nothing is sent to the server unless the box is ticked ---- */
+/* ---- Date of birth boxes: number keypad, digits only, jump to the next box ---- */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.dob-row{display:flex;gap:8px}.dob-row .input-field{text-align:center;min-width:0;flex:1}.dob-row #reg-yyyy{flex:1.6}';
+  document.head.appendChild(st);
+  const ids = ['reg-dd', 'reg-mm', 'reg-yyyy'];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      el.value = el.value.replace(/\D/g, '').slice(0, el.maxLength);
+      // day > 3 or month > 1 can only be a single digit start, so move on early
+      const first = el.value.charAt(0), done = el.value.length >= el.maxLength ||
+        (id === 'reg-dd' && el.value.length === 1 && +first > 3) || (id === 'reg-mm' && el.value.length === 1 && +first > 1);
+      if (done && i < 2) {
+        if (el.value.length === 1) el.value = '0' + el.value;
+        document.getElementById(ids[i + 1]).focus();
+      }
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !el.value && i > 0) document.getElementById(ids[i - 1]).focus();
+    });
+  });
+})();
+/* ---- Age gate (13+): neutral date-of-birth check before an account is created ---- */
+const MIN_AGE = 13;
+function ageBlocked() { try { return localStorage.getItem('fv_underage') === '1'; } catch (e) { return false; } }
+function blockUnderage() { try { localStorage.setItem('fv_underage', '1'); } catch (e) {} }
+// returns true when the person may create an account
+function checkBirthDate() {
+  if (ageBlocked()) { showMsgBox('Sorry, you cannot create a fullview account.'); return false; }
+  const g = id => (document.getElementById(id) || {}).value || '';
+  const dd = parseInt(g('reg-dd'), 10), mm = parseInt(g('reg-mm'), 10), yy = parseInt(g('reg-yyyy'), 10);
+  if (!dd && !mm && !yy) { showMsgBox('To create a new account, please enter your date of birth (day, month, year).'); return false; }
+  const b = new Date(yy, (mm || 0) - 1, dd || 0), n = new Date();
+  const real = yy >= 1900 && String(yy).length === 4 && mm >= 1 && mm <= 12 && dd >= 1 && b.getFullYear() === yy && b.getMonth() === mm - 1 && b.getDate() === dd;
+  if (!real || b > n) { showMsgBox('Please check your date of birth. Example: 25 / 03 / 2005.'); return false; }
+  let age = n.getFullYear() - b.getFullYear();
+  const m = n.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && n.getDate() < b.getDate())) age--;
+  if (age < MIN_AGE) { blockUnderage(); showMsgBox('Sorry, you cannot create a fullview account.'); return false; }
+  return true;
+}
+/* ---- Terms gate: nothing is sent to the server unless the box is ticked ---- */
 function requireAgeConsent(boxId) {
   const box = document.getElementById(boxId);
   const ok = !!(box && box.checked);
   const lbl = box && box.closest ? box.closest('.auth-consent') : null;
   if (lbl) lbl.classList.toggle('consent-error', !ok);
-  if (!ok) showMsgBox('You must confirm that you are at least 13 years old and accept the Terms of Use and the Privacy Policy before you can create an account or log in.');
+  if (!ok) showMsgBox('You must accept the Terms of Use and the Privacy Policy before you can create an account or log in.');
   return ok;
 }
 (function () {
@@ -5787,6 +5841,7 @@ window.completeRegistration = async function () {
   if (nErr) { loginFailed(email); showMsgBox(nErr + ' (If you already have an account, check your password.)'); return; }
   if (password.length < 6) { showMsgBox('Your password must have at least 6 characters.'); return; }
   if (!(await nameAvailable(name))) { loginFailed(email); showMsgBox('That name is already used by another account. If this is your account, check your password.'); return; }
+  if (!checkBirthDate()) return;
   const s = await sb.auth.signUp({ email, password, options: { data: { name, age_13_confirmed: true, terms_accepted_at: new Date().toISOString() } } });
   if (s.error) {
     if (/already/i.test(s.error.message)) { loginFailed(email); showMsgBox('Wrong password for this account.'); }
@@ -5831,6 +5886,7 @@ window.logout = async function () {
   try { localStorage.removeItem('fullview_current_user'); } catch (e) {}
   currentUser = null;
   ['reg-consent', 'vl-consent'].forEach(id => { const b = document.getElementById(id); if (b) b.checked = false; });
+  ['reg-dd', 'reg-mm', 'reg-yyyy'].forEach(i => { const e = document.getElementById(i); if (e) e.value = ''; });
   document.getElementById('main-nav').style.display = 'none';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('auth-screen').classList.add('active');
