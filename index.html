@@ -919,18 +919,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 /* ===== Admin private server ===== */
 .vbadge{display:inline-flex;vertical-align:middle;margin-left:4px}
 .vbadge svg{width:15px;height:15px}
-#admin-panel{position:absolute;inset:0;z-index:520;background:#fafafa;display:none;flex-direction:column}
-#admin-panel.active{display:flex}
-.adm-top{background:linear-gradient(135deg,#1b1340,#3a1c8f);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.adm-top h2{font-size:1.05rem;display:flex;align-items:center;gap:8px}
-.adm-top button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:18px;padding:7px 14px;cursor:pointer;font-weight:600;font-size:.82rem}
-.adm-tabs{display:flex;background:#fff;border-bottom:1px solid var(--border)}
-.adm-tab{flex:1;padding:12px;border:0;background:none;font-weight:700;color:var(--secondary-text);cursor:pointer;border-bottom:3px solid transparent}
-.adm-tab.active{color:#6d4aff;border-color:#6d4aff}
-.adm-body{flex:1;overflow-y:auto;padding:12px}
-.adm-stats{display:flex;gap:8px;margin-bottom:10px}
-.adm-stat{flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px;text-align:center;font-size:.72rem;color:var(--secondary-text)}
-.adm-stat b{display:block;font-size:1.2rem;color:var(--text)}
 .adm-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .adm-row{display:flex;align-items:center;gap:10px}
 .adm-info{flex:1;min-width:0}
@@ -942,11 +930,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 .adm-btn.ver{background:#e4f1ff;color:#0a6fd6}
 .adm-btn.ban{background:#ffe3e3;color:#d62828}
 .adm-btn.ok{background:#e0f7e6;color:#1a8f3c}
-.adm-msg{padding:7px 10px;border-radius:12px;background:#fff;border:1px solid var(--border);margin-bottom:6px;font-size:.85rem;display:flex;gap:8px;align-items:flex-start}
-.adm-msg .who{font-weight:700;color:#6d4aff}
-.adm-msg .t{flex:1;word-break:break-word}
-.adm-msg button{border:0;background:none;cursor:pointer;color:#d62828;font-size:.95rem}
-
 #guest-bar{display:none;background:#f1ecff;color:#5b3be0;font-size:.78rem;font-weight:700;text-align:center;padding:6px 10px}
 .fs-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;background:var(--card-bg)}
 .fs-head b{font-size:1rem}.fs-head a{color:var(--primary);font-size:.85rem;font-weight:600;cursor:pointer}
@@ -1168,16 +1151,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <button class="btn secondary" id="dl-open-btn" style="margin-top:10px;width:100%;max-width:100%;" onclick="openModal('download-modal')">⬇ Download the app</button>
         </div>
 
-
-        <div id="admin-panel">
-            <div class="adm-top"><h2>🛡️ Admin Server</h2><button onclick="closeAdminPanel()">Exit</button></div>
-            <div class="adm-tabs">
-                <button class="adm-tab active" id="adm-tab-accounts" onclick="adminTab('accounts')">Accounts</button>
-                <button class="adm-tab" id="adm-tab-chats" onclick="adminTab('chats')">Discussions</button>
-                <button class="adm-tab" id="adm-tab-reports" onclick="adminTab('reports')">Reports</button>
-            </div>
-            <div class="adm-body" id="admin-body"></div>
-        </div>
 
         <div id="search-screen" class="screen">
             <div class="header">
@@ -1427,17 +1400,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                             <span style="font-weight: 600;">Auto response</span>
                         </div>
                         <span id="drawer-autoresp-label" style="font-size:0.85rem; color:var(--secondary-text);">Off &gt;</span>
-                    </div>
-                </div>
-
-                <div id="drawer-admin-wrap" style="display:none;">
-                    <div class="drawer-section-title">Administration</div>
-                    <div class="drawer-item" onclick="closeProfileDrawer(); openAdminGate()">
-                        <div class="drawer-item-left">
-                            <span class="drawer-item-icon">🛡️</span>
-                            <span>Admin Server</span>
-                        </div>
-                        <span style="color:var(--secondary-text);">&gt;</span>
                     </div>
                 </div>
 
@@ -1718,17 +1680,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         </div>
     </div>
 
-    <div class="modal" id="admin-gate-modal" onclick="if(event.target===this)closeModal('admin-gate-modal')">
-        <div class="modal-content" style="max-width:340px;text-align:center;">
-            <div style="font-size:2.2rem;">🔒</div>
-            <h3 style="margin:6px 0;">Private Server</h3>
-            <p style="color:var(--secondary-text);font-size:.85rem;margin-bottom:12px;">Admins only. Enter the password to continue.</p>
-            <input type="password" id="admin-pass-input" class="input-field" placeholder="Admin password" onkeydown="if(event.key==='Enter')submitAdminPassword()">
-            <button class="btn" style="max-width:100%;" onclick="submitAdminPassword()">Enter</button>
-            <button class="btn secondary" style="width:100%;margin-top:8px;" onclick="closeModal('admin-gate-modal')">Cancel</button>
-        </div>
-    </div>
-
     <div class="modal" id="share-modal" onclick="if(event.target===this)closeShare()">
         <div class="modal-content">
             <h3 style="text-align:center">Send to a discussion</h3>
@@ -1955,7 +1906,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         const ADMIN_SALT = 'fv-admin-v1';
         const ADMIN_HASH = 'd5e49aca3a4e3e08eff6a362f0714bdd3d286e92e467adefca23577054329238';
         function adminPasswordOk(p) { return hashPassword(p, ADMIN_SALT, 5000) === ADMIN_HASH; }
-        let adminUnlocked = false, adminView = 'accounts', adminRoom = null, adminQuery = '';
+        // Administration moved to the separate fullview administration app; nothing admin-related is loaded here.
 
         const VERIFIED_SVG = '<svg viewBox="0 0 24 24"><path fill="#0095f6" d="M12 1.8l2.4 1.7 2.9-.2 1.2 2.7 2.6 1.3-.3 2.9 1.7 2.4-1.7 2.4.3 2.9-2.6 1.3-1.2 2.7-2.9-.2-2.4 1.7-2.4-1.7-2.9.2-1.2-2.7-2.6-1.3.3-2.9L1.8 12l1.7-2.4-.3-2.9 2.6-1.3 1.2-2.7 2.9.2z"/><path fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M8 12.2l2.7 2.7L16 9.5"/></svg>';
         function findUserByName(name) { return users.find(u => u.name === name); }
@@ -1963,134 +1914,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         function isBannedName(name) { let u = findUserByName(name); return !!(u && u.banned); }
         function vBadge(name) { return isVerifiedName(name) ? `<span class="vbadge" title="Verified">${VERIFIED_SVG}</span>` : ''; }
         function isEmailBanned(email) { return users.some(u => u.banned && u.email && u.email.toLowerCase() === String(email).toLowerCase()); }
-
-        function openAdminGate() {
-            if (!currentUser || !currentUser.verified || currentUser.isGuest) return;
-            if (adminUnlocked) { openAdminPanel(); return; }
-            document.getElementById('admin-pass-input').value = '';
-            openModal('admin-gate-modal');
-            setTimeout(() => document.getElementById('admin-pass-input').focus(), 80);
-        }
-        function submitAdminPassword() {
-            let v = document.getElementById('admin-pass-input').value.trim();
-            let lock = loginLocked('admin');
-            if (lock) { showMsgBox('Too many attempts. Try again in ' + lock + ' seconds.'); return; }
-            if (adminPasswordOk(v)) {
-                adminUnlocked = true;
-                closeModal('admin-gate-modal');
-                openAdminPanel();
-            } else {
-                loginFailed('admin');
-                showMsgBox('Wrong password.');
-            }
-        }
-        function openAdminPanel() {
-            if (!adminUnlocked) return;
-            adminView = 'accounts'; adminRoom = null; adminQuery = '';
-            document.getElementById('admin-panel').classList.add('active');
-            adminTab('accounts');
-        }
-        function closeAdminPanel() {
-            adminUnlocked = false;
-            document.getElementById('admin-panel').classList.remove('active');
-        }
-        function adminTab(t) {
-            adminView = t; adminRoom = null;
-            document.getElementById('adm-tab-accounts').classList.toggle('active', t === 'accounts');
-            document.getElementById('adm-tab-chats').classList.toggle('active', t === 'chats');
-            document.getElementById('adm-tab-reports').classList.toggle('active', t === 'reports');
-            renderAdmin();
-        }
-        function renderAdmin() {
-            if (!adminUnlocked) return;
-            if (adminView === 'accounts') renderAdminAccounts();
-            else if (adminView === 'reports') renderAdminReports();
-            else if (adminRoom) renderAdminThread(adminRoom);
-            else renderAdminChats();
-        }
-        function adminAvatar(u) {
-            return u.avatarImage ? `<img src="${esc(u.avatarImage)}" class="avatar" style="object-fit:cover;">` : `<div class="avatar" style="background:${esc(u.avatarColor || '#0095f6')};">${esc((u.name || '?')[0])}</div>`;
-        }
-        function renderAdminAccounts() {
-            let body = document.getElementById('admin-body');
-            let q = adminQuery.toLowerCase();
-            let list = users.filter(u => !q || (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
-            let nV = users.filter(u => u.verified).length, nB = users.filter(u => u.banned).length;
-            let html = `<div class="adm-stats">
-                <div class="adm-stat"><b>${users.length}</b>Accounts</div>
-                <div class="adm-stat"><b>${nV}</b>Verified</div>
-                <div class="adm-stat"><b>${nB}</b>Banned</div></div>
-                <input class="input-field" id="adm-search" placeholder="Search accounts..." value="${esc(adminQuery)}" oninput="adminQuery=this.value;renderAdminAccounts();var i=document.getElementById('adm-search');i.focus();i.setSelectionRange(i.value.length,i.value.length)" style="margin-bottom:10px;">`;
-            if (!list.length) html += '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No accounts found.</p>';
-            list.forEach(u => {
-                html += `<div class="adm-card"><div class="adm-row">${adminAvatar(u)}
-                    <div class="adm-info"><div class="n">${esc(u.name)}${u.verified ? `<span class="vbadge">${VERIFIED_SVG}</span>` : ''}${u.banned ? '<span class="adm-tag">BANNED</span>' : ''}</div>
-                    <div class="e">${esc(u.email || '')} · ${esc(u.loginProvider || 'Email')}</div></div></div>
-                    <div class="adm-actions">
-                        <button class="adm-btn ver" onclick="adminToggleVerify(${u.id})">${u.verified ? 'Remove verification' : '✔ Verify'}</button>
-                        <button class="adm-btn ${u.banned ? 'ok' : 'ban'}" onclick="adminToggleBan(${u.id})">${u.banned ? 'Unban' : '🚫 Ban'}</button>
-                    </div></div>`;
-            });
-            body.innerHTML = html;
-        }
-        function adminToggleVerify(id) {
-            let u = users.find(x => x.id === id); if (!u) return;
-            u.verified = !u.verified;
-            if (currentUser && currentUser.id === id) currentUser.verified = u.verified;
-            saveToLocalStorage(); renderAdminAccounts(); refreshAfterAdminChange();
-        }
-        function adminToggleBan(id) {
-            let u = users.find(x => x.id === id); if (!u) return;
-            let action = u.banned ? 'Unban' : 'Ban';
-            if (!confirm(`${action} ${u.name}?`)) return;
-            u.banned = !u.banned;
-            saveToLocalStorage(); renderAdminAccounts(); refreshAfterAdminChange();
-        }
-        function refreshAfterAdminChange() {
-            try { renderFeed(); renderStories(); handleSearch(''); renderChatList(); } catch(e) {}
-        }
-        function adminRoomName(key) {
-            if (key === 'global-chat') return '🌍 Global Chatroom';
-            if (key === 'full-ai') return '🤖 Full AI Assistant';
-            let u = users.find(x => String(x.id) === String(key));
-            return u ? '💬 DM with ' + u.name : '💬 Direct chat #' + key;
-        }
-        function renderAdminChats() {
-            let body = document.getElementById('admin-body');
-            let keys = Object.keys(messages);
-            ['global-chat', 'full-ai'].forEach(k => { if (!keys.includes(k)) keys.unshift(k); });
-            let html = '<p style="font-size:.8rem;color:var(--secondary-text);margin-bottom:8px;">Every discussion on the platform. Tap one to read it.</p>';
-            keys.forEach(k => {
-                let list = messages[k] || [];
-                let last = list.length ? list[list.length - 1] : null;
-                html += `<div class="adm-card" style="cursor:pointer;" onclick="adminOpenRoom(${jsArg(k)})">
-                    <div class="n" style="font-weight:700;">${esc(adminRoomName(k))} <span style="color:var(--secondary-text);font-weight:500;font-size:.75rem;">· ${list.length} messages</span></div>
-                    <div class="e" style="font-size:.78rem;color:var(--secondary-text);margin-top:3px;">${last ? esc((last.senderName ? last.senderName + ': ' : '') + (last.text || '')) : 'No messages yet'}</div></div>`;
-            });
-            body.innerHTML = html;
-        }
-        function adminOpenRoom(k) { adminRoom = k; renderAdminThread(k); }
-        function renderAdminThread(k) {
-            let body = document.getElementById('admin-body');
-            let list = messages[k] || [];
-            let html = `<button class="adm-btn" onclick="adminRoom=null;renderAdmin()" style="margin-bottom:10px;">← All discussions</button>
-                <h3 style="margin-bottom:10px;font-size:1rem;">${esc(adminRoomName(k))}</h3>`;
-            if (!list.length) html += '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No messages.</p>';
-            list.forEach((m, i) => {
-                let who = m.isSystem ? 'System' : (m.senderName || (m.sender === 'full-ai' ? 'Full AI' : 'Unknown'));
-                let sender = findUserByName(who);
-                html += `<div class="adm-msg"><div class="t"><span class="who">${esc(who)}</span>${sender && sender.verified ? `<span class="vbadge">${VERIFIED_SVG}</span>` : ''}${sender && sender.banned ? ' <span class="adm-tag">BANNED</span>' : ''}<br>${esc(m.text || '')}</div>
-                    ${sender ? `<button title="${sender.banned ? 'Unban' : 'Ban'} author" onclick="adminToggleBan(${sender.id});renderAdminThread(${jsArg(k)})">${sender.banned ? '✅' : '🚫'}</button>` : ''}
-                    <button title="Delete message" onclick="adminDeleteMessage(${jsArg(k)},${i})">🗑</button></div>`;
-            });
-            body.innerHTML = html;
-        }
-        function adminDeleteMessage(k, i) {
-            if (!confirm('Delete this message?')) return;
-            (messages[k] || []).splice(i, 1);
-            saveToLocalStorage(); renderAdminThread(k);
-        }
-
 
         // ===== Verified log in =====
         function openVerifyLogin() {
@@ -5404,8 +5227,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             let ar = document.getElementById('drawer-autoresp-wrap');
             if (ar) ar.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
             arLabel();
-            let adm = document.getElementById('drawer-admin-wrap');
-            if (adm) adm.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
             document.getElementById('profile-drawer-menu').classList.add('active');
         }
 
@@ -5487,49 +5308,10 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             openReport('story', st.id);
             if (!reportTarget) resumeStory();
         }
-        function renderAdminReports() {
-            let body = document.getElementById('admin-body');
-            let list = reports.slice().reverse();
-            let nOpen = reports.filter(r => r.status === 'open').length;
-            let html = `<div class="adm-stats"><div class="adm-stat"><b>${reports.length}</b>Reports</div><div class="adm-stat"><b>${nOpen}</b>Open</div></div>`;
-            if (!list.length) html += '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No reports yet.</p>';
-            list.forEach(r => {
-                let au = findUserByName(r.author);
-                let exists = !!findItem(r.kind, r.itemId);
-                html += `<div class="adm-card"><div class="n">🚩 ${esc(r.reason)} <span style="color:var(--secondary-text);font-weight:500;font-size:.75rem;">· ${esc(reportKindLabel(r.kind))} · ${esc(r.status)}</span></div>
-                    <div class="e" style="white-space:normal;margin-top:3px;">By <b>${esc(r.author)}</b>${au && au.banned ? ' <span class="adm-tag">BANNED</span>' : ''} · reported by ${esc(r.reporter)} · ${timeAgo(r.ts)}</div>
-                    ${r.caption ? `<div class="e" style="white-space:normal;margin-top:4px;">“${esc(r.caption)}”</div>` : ''}
-                    ${r.details ? `<div class="e" style="white-space:normal;margin-top:4px;">Note: ${esc(r.details)}</div>` : ''}
-                    <div class="adm-actions">
-                        ${exists ? `<button class="adm-btn ban" onclick="adminDeleteReported(${r.id})">🗑 Delete content</button>` : '<span class="e">Content already removed</span>'}
-                        ${au ? `<button class="adm-btn ${au.banned ? 'ok' : 'ban'}" onclick="adminBanReported(${r.id})">${au.banned ? 'Unban author' : '🚫 Ban author'}</button>` : ''}
-                        <button class="adm-btn" onclick="adminDismissReport(${r.id})">${r.status === 'open' ? 'Dismiss' : 'Reopen'}</button>
-                    </div></div>`;
-            });
-            body.innerHTML = html;
-        }
-        function adminDeleteReported(rid) {
-            let r = reports.find(x => x.id === rid);
-            if (!r || !confirm('Delete this content permanently?')) return;
-            let it = findItem(r.kind, r.itemId);
-            if (it) {
-                let list = getList(r.kind);
-                list.splice(list.indexOf(it), 1);
-                if (r.kind === 'minim' && !it.repostOf) deleteVideoBlob(it.id);
-            }
-            reports.forEach(x => { if (x.kind === r.kind && x.itemId === r.itemId) x.status = 'actioned'; });
-            saveToLocalStorage(); refreshAfterAdminChange(); renderAdminReports();
-        }
-        function adminBanReported(rid) {
-            let r = reports.find(x => x.id === rid); if (!r) return;
-            let u = findUserByName(r.author); if (!u) return;
-            adminToggleBan(u.id);
-            renderAdminReports();
-        }
-        function adminDismissReport(rid) {
-            let r = reports.find(x => x.id === rid); if (!r) return;
-            r.status = r.status === 'open' ? 'dismissed' : 'open';
-            saveToLocalStorage(); renderAdminReports();
+        // Reviewing and resolving reports now happens in the separate fullview administration app.
+        function refreshAfterAdminChange() {
+            // Used by the automatic content filter (illegal-content and NSFW auto-ban) to refresh the UI after it bans someone.
+            try { renderFeed(); renderStories(); handleSearch(''); renderChatList(); } catch (e) {}
         }
 
         // Put your public contact email between the quotes to show it in the Privacy Policy.
@@ -5833,7 +5615,7 @@ window.completeRegistration = async function () {
 
   let r = await sb.auth.signInWithPassword({ email, password });
   if (!r.error) { delete loginFails[email]; if (await finishLogin(r.data.user)) document.getElementById('reg-password').value = ''; return; }
-  if (/not confirmed/i.test(r.error.message)) { window.__awaitConfirm = { email, password }; return; }
+  if (/not confirmed/i.test(r.error.message)) { showMsgBox('Please confirm your email first: open the link we sent you, then log in.'); return; }
   if (!/invalid login/i.test(r.error.message)) { showMsgBox(r.error.message); return; }
 
   // No matching login: try to create a new account
@@ -5849,108 +5631,10 @@ window.completeRegistration = async function () {
     return;
   }
   if (s.data.user && s.data.user.identities && s.data.user.identities.length === 0) { loginFailed(email); showMsgBox('Wrong password for this account.'); return; }
-  if (!s.data.session) { window.__awaitConfirm = { email, password }; return; }
+  if (!s.data.session) { showMsgBox('Account created! Check your email and open the confirmation link, then log in.'); return; }
   document.getElementById('reg-password').value = '';
   await finishLogin(s.data.user);
 };
-
-/* ---- Skeleton screen: shown while signing in and while waiting for the email confirmation ---- */
-(function () {
-  const css = document.createElement('style');
-  css.textContent = `
-  #skel-wait{position:absolute;inset:0;z-index:400;background:var(--card-bg,#fff);display:none;flex-direction:column;overflow:hidden}
-  #skel-wait.show{display:flex}
-  .skw-top{padding:22px 20px 10px;text-align:center}
-  .skw-spin{width:26px;height:26px;border-radius:50%;border:3px solid #e3e6ea;border-top-color:var(--primary,#0095f6);margin:0 auto 10px;animation:skwspin .8s linear infinite}
-  .skw-title{font-weight:700;font-size:1.05rem;color:var(--text,#262626)}
-  .skw-sub{font-size:.84rem;color:var(--secondary-text,#8e8e8e);margin-top:4px;line-height:1.4;overflow-wrap:anywhere}
-  .skw-actions{display:none;gap:8px;justify-content:center;margin-top:12px}
-  #skel-wait.confirm .skw-actions{display:flex}
-  .skw-feed{padding:10px 16px;display:flex;flex-direction:column;gap:22px;flex:1;overflow:hidden}
-  .skw-card{display:flex;flex-direction:column;gap:10px}
-  .skw-row{display:flex;align-items:center;gap:10px}
-  .sk{background:#e9ecef;border-radius:8px;position:relative;overflow:hidden}
-  .sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:skwshim 1.4s infinite}
-  .sk.c{border-radius:50%;width:38px;height:38px;flex:none}
-  .sk.l{height:11px}
-  .sk.photo{height:210px;border-radius:12px}
-  .sk.btn{height:34px;border-radius:10px}
-  @keyframes skwshim{to{transform:translateX(100%)}}
-  @keyframes skwspin{to{transform:rotate(360deg)}}
-  @media (prefers-reduced-motion:reduce){.sk::after,.skw-spin{animation:none}}
-  `;
-  document.head.appendChild(css);
-
-  const card = '<div class="skw-card"><div class="skw-row"><div class="sk c"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="sk l" style="width:45%"></div><div class="sk l" style="width:28%"></div></div></div><div class="sk photo"></div><div class="sk l" style="width:92%"></div><div class="sk l" style="width:64%"></div></div>';
-  let el = null, timer = null, ctx = null;
-
-  function build() {
-    if (el) return el;
-    el = document.createElement('div');
-    el.id = 'skel-wait';
-    el.setAttribute('role', 'status');
-    el.setAttribute('aria-live', 'polite');
-    el.innerHTML = '<div class="skw-top"><div class="skw-spin"></div><div class="skw-title" id="skw-title"></div><div class="skw-sub" id="skw-sub"></div>' +
-      '<div class="skw-actions"><button class="btn secondary" id="skw-resend" type="button">Resend email</button><button class="btn secondary" id="skw-back" type="button">Back</button></div></div>' +
-      '<div class="skw-feed">' + card + card + '</div>';
-    (document.getElementById('app') || document.body).appendChild(el);
-    el.querySelector('#skw-back').onclick = function () { window.hideSkeleton(); };
-    el.querySelector('#skw-resend').onclick = async function () {
-      if (!ctx || !sb) return;
-      const b = this; b.disabled = true;
-      try { const r = await sb.auth.resend({ type: 'signup', email: ctx.email }); b.textContent = r.error ? 'Try again later' : 'Email sent ✓'; }
-      catch (e) { b.textContent = 'Try again later'; }
-      setTimeout(function () { b.disabled = false; b.textContent = 'Resend email'; }, 30000);
-    };
-    return el;
-  }
-
-  window.showSkeleton = function (title, sub, confirmMode) {
-    build();
-    el.querySelector('#skw-title').textContent = title || 'Loading…';
-    el.querySelector('#skw-sub').textContent = sub || '';
-    el.classList.toggle('confirm', !!confirmMode);
-    el.classList.add('show');
-  };
-  window.hideSkeleton = function () {
-    if (timer) { clearInterval(timer); timer = null; }
-    ctx = null;
-    if (el) el.classList.remove('show');
-  };
-
-  // Waiting for the email link: show the skeleton and check every 4 s whether the account is confirmed.
-  window.waitForEmailConfirm = function (email, password) {
-    ctx = { email: email, password: password };
-    window.showSkeleton('Check your email ✉️', 'We sent a confirmation link to ' + email + '. Open it and this screen continues by itself.', true);
-    if (timer) clearInterval(timer);
-    let busy = false, tries = 0;
-    timer = setInterval(async function () {
-      if (busy || !ctx) return;
-      if (++tries > 225) { window.hideSkeleton(); showMsgBox('Still waiting for the confirmation. Open the link in your email, then log in.'); return; } // ~15 min
-      busy = true;
-      try {
-        const r = await sb.auth.signInWithPassword({ email: ctx.email, password: ctx.password });
-        if (!r.error) {
-          window.hideSkeleton();
-          document.getElementById('reg-password').value = '';
-          await finishLogin(r.data.user);
-        }
-      } catch (e) {} finally { busy = false; }
-    }, 4000);
-  };
-
-  // Wrap the sign up / log in so the skeleton shows during the request and during the email wait.
-  const orig = window.completeRegistration;
-  window.completeRegistration = async function () {
-    window.__awaitConfirm = null;
-    window.showSkeleton('Signing you in…', '', false);
-    try { await orig(); }
-    catch (e) { console.error(e); }
-    finally { if (!window.__awaitConfirm) window.hideSkeleton(); }
-    const w = window.__awaitConfirm; window.__awaitConfirm = null;
-    if (w) window.waitForEmailConfirm(w.email, w.password);
-  };
-})();
 
 /* ---- Verified login: account must already be verified by an admin ---- */
 window.submitVerifyLogin = async function () {
@@ -6763,114 +6447,8 @@ window.sendShareTo = function (targetId) {
 </script>
 
 <script>
-/* ===== Supabase connection: stage 5 (reports, admin panel, auto-responses) ===== */
+/* ===== Supabase connection: reports (admin panel moved to the separate fullview administration app) ===== */
 const REPORT_KIND = { post: 'post', story: 'story', minim: 'full' };
-const REPORT_KIND_BACK = { post: 'post', story: 'story', full: 'minim' };
-
-/* ---- Admin entry: the server decides who is an admin (no browser password) ---- */
-window.openAdminGate = function () {
-  if (!currentUser || currentUser.isGuest) return;
-  if (!currentUser.isAdmin) { showMsgBox('This area is for administrators only.'); return; }
-  adminUnlocked = true; openAdminPanel();
-};
-async function loadAdminData() {
-  if (!realUser() || !currentUser.isAdmin) return;
-  const acc = await sb.rpc('admin_list_accounts');
-  if (acc.error) { showMsgBox('Could not load accounts. Did you run the stage 5 SQL?'); }
-  else (acc.data || []).forEach(a => { const u = users.find(x => x.id === a.id); if (u) u.email = a.email || ''; });
-  await loadReports();
-}
-async function loadReports() {
-  if (!realUser() || !currentUser.isAdmin) return;
-  const { data, error } = await sb.from('reports').select('*').order('created_at', { ascending: false }).limit(500);
-  if (error || !data) return;
-  const byId = new Map(users.map(u => [u.id, u]));
-  reports = data.map(r => ({ id: r.id, kind: REPORT_KIND_BACK[r.kind] || r.kind, itemId: r.item_id,
-    author: (byId.get(r.author_id) || {}).name || 'Unknown', reporter: (byId.get(r.reporter_id) || {}).name || 'Unknown',
-    reason: r.reason, details: r.details || '', caption: r.caption || '', ts: new Date(r.created_at).getTime(),
-    status: r.status === 'resolved' ? 'actioned' : r.status, authorId: r.author_id })).reverse();
-}
-const _origOpenAdminPanel = window.openAdminPanel;
-window.openAdminPanel = async function () { await loadAdminData(); _origOpenAdminPanel(); };
-const _origAdminTab = window.adminTab;
-window.adminTab = async function (t) { if (t === 'reports') await loadReports(); _origAdminTab(t); };
-
-/* ---- Accounts tab ---- */
-window.renderAdminAccounts = function () {
-  const body = document.getElementById('admin-body'), q = adminQuery.toLowerCase();
-  const list = users.filter(u => !q || (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
-  const nV = users.filter(u => u.verified).length, nB = users.filter(u => u.banned).length;
-  body.innerHTML = '<div class="adm-stats"><div class="adm-stat"><b>' + users.length + '</b>Accounts</div><div class="adm-stat"><b>' + nV + '</b>Verified</div><div class="adm-stat"><b>' + nB + '</b>Banned</div></div>' +
-    '<input class="input-field" id="adm-search" placeholder="Search accounts..." value="' + esc(adminQuery) + '" oninput="adminQuery=this.value;renderAdminAccounts();var i=document.getElementById(\'adm-search\');i.focus();i.setSelectionRange(i.value.length,i.value.length)" style="margin-bottom:10px;">' +
-    '<div id="adm-list"></div>';
-  const box = document.getElementById('adm-list');
-  if (!list.length) box.innerHTML = '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No accounts found.</p>';
-  list.forEach(u => {
-    const card = document.createElement('div'); card.className = 'adm-card';
-    card.innerHTML = '<div class="adm-row">' + adminAvatar(u) + '<div class="adm-info"><div class="n">' + esc(u.name) + (u.verified ? '<span class="vbadge">' + VERIFIED_SVG + '</span>' : '') +
-      (u.banned ? '<span class="adm-tag">BANNED</span>' : '') + (u.isAdmin ? '<span class="adm-tag">ADMIN</span>' : '') + '</div><div class="e">' + esc(u.email || '') + ' · ' + esc(u.loginProvider || 'Email') + '</div></div></div>' +
-      '<div class="adm-actions"><button class="adm-btn ver">' + (u.verified ? 'Remove verification' : '✔ Verify') + '</button>' +
-      '<button class="adm-btn ' + (u.banned ? 'ok' : 'ban') + '">' + (u.banned ? 'Unban' : '🚫 Ban') + '</button></div>';
-    card.querySelector('.ver').onclick = () => adminToggleVerify(u.id);
-    card.querySelector('.ban, .ok').onclick = () => adminToggleBan(u.id);
-    box.appendChild(card);
-  });
-};
-window.adminToggleVerify = async function (id) {
-  const u = users.find(x => x.id === id); if (!u) return;
-  const { error } = await sb.rpc('admin_set_verified', { target: id, do_verify: !u.verified });
-  if (error) { showMsgBox('Could not change verification: ' + error.message); return; }
-  u.verified = !u.verified; if (currentUser.id === id) currentUser.verified = u.verified;
-  saveToLocalStorage(); renderAdminAccounts(); refreshAfterAdminChange();
-};
-window.adminToggleBan = async function (id) {
-  const u = users.find(x => x.id === id); if (!u) return;
-  if (!confirm((u.banned ? 'Unban ' : 'Ban ') + u.name + '?')) return;
-  const { error } = await sb.rpc('admin_set_ban', { target: id, do_ban: !u.banned, why: null });
-  if (error) { showMsgBox('Could not change the ban: ' + error.message); return; }
-  u.banned = !u.banned; saveToLocalStorage();
-  if (adminView === 'accounts') renderAdminAccounts();
-  else if (adminView === 'reports') renderAdminReports();
-  else if (adminRoom) renderAdminThread(adminRoom);
-  refreshAfterAdminChange();
-};
-
-/* ---- Discussions tab: the Global Chatroom only (private chats are not readable by admins) ---- */
-window.renderAdminChats = function () {
-  const list = messages['global-chat'] || [], last = list.length ? list[list.length - 1] : null;
-  const body = document.getElementById('admin-body');
-  body.innerHTML = '<p style="font-size:.8rem;color:var(--secondary-text);margin-bottom:8px;">Public discussions you can moderate. Private chats between people are not visible to admins.</p>' +
-    '<div class="adm-card" style="cursor:pointer;" id="adm-global"><div class="n" style="font-weight:700;">🌍 Global Chatroom <span style="color:var(--secondary-text);font-weight:500;font-size:.75rem;">· ' + list.length + ' messages</span></div>' +
-    '<div class="e" style="font-size:.78rem;color:var(--secondary-text);margin-top:3px;">' + (last ? esc((last.senderName ? last.senderName + ': ' : '') + (last.text || '')) : 'No messages yet') + '</div></div>';
-  document.getElementById('adm-global').onclick = () => adminOpenRoom('global-chat');
-};
-window.renderAdminThread = function (k) {
-  const body = document.getElementById('admin-body'), list = messages['global-chat'] || [];
-  body.innerHTML = '<button class="adm-btn" id="adm-back" style="margin-bottom:10px;">← All discussions</button><h3 style="margin-bottom:10px;font-size:1rem;">🌍 Global Chatroom</h3>';
-  document.getElementById('adm-back').onclick = () => { adminRoom = null; renderAdmin(); };
-  if (!list.length) body.insertAdjacentHTML('beforeend', '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No messages.</p>');
-  list.forEach(m => {
-    const who = m.senderName || 'Unknown', sender = findUserByName(who);
-    const row = document.createElement('div'); row.className = 'adm-msg';
-    row.innerHTML = '<div class="t"><span class="who">' + esc(who) + '</span>' + (sender && sender.verified ? '<span class="vbadge">' + VERIFIED_SVG + '</span>' : '') +
-      (sender && sender.banned ? ' <span class="adm-tag">BANNED</span>' : '') + '<br>' + esc(m.text || '') + '</div>';
-    if (sender && !sender.isAdmin) {
-      const b = document.createElement('button'); b.title = (sender.banned ? 'Unban' : 'Ban') + ' author'; b.textContent = sender.banned ? '✅' : '🚫';
-      b.onclick = () => adminToggleBan(sender.id); row.appendChild(b);
-    }
-    const d = document.createElement('button'); d.title = 'Delete message'; d.textContent = '🗑';
-    d.onclick = () => adminDeleteMessage(k, list.indexOf(m)); row.appendChild(d);
-    body.appendChild(row);
-  });
-};
-window.adminDeleteMessage = async function (k, i) {
-  const list = messages['global-chat'] || [], m = list[i]; if (!m || !confirm('Delete this message?')) return;
-  if (isSrvId(m.id)) {
-    const { error } = await sb.from('messages').delete().eq('id', m.id);
-    if (error) { showMsgBox('Could not delete the message: ' + error.message); return; }
-  }
-  list.splice(i, 1); saveToLocalStorage(); renderAdminThread(k);
-};
 
 /* ---- Sending a report ---- */
 window.submitReport = async function () {
@@ -6888,53 +6466,6 @@ window.submitReport = async function () {
   }
   closeReport();
   showMsgBox('Thank you. Your report was sent to the fullview moderators.');
-};
-
-/* ---- Reports tab ---- */
-window.renderAdminReports = function () {
-  const body = document.getElementById('admin-body'), list = reports.slice().reverse();
-  const nOpen = reports.filter(r => r.status === 'open').length;
-  body.innerHTML = '<div class="adm-stats"><div class="adm-stat"><b>' + reports.length + '</b>Reports</div><div class="adm-stat"><b>' + nOpen + '</b>Open</div></div>';
-  if (!list.length) body.insertAdjacentHTML('beforeend', '<p style="text-align:center;color:var(--secondary-text);padding:20px;">No reports yet.</p>');
-  list.forEach(r => {
-    const au = r.authorId ? users.find(u => u.id === r.authorId) : null;
-    const card = document.createElement('div'); card.className = 'adm-card';
-    card.innerHTML = '<div class="n">🚩 ' + esc(r.reason) + ' <span style="color:var(--secondary-text);font-weight:500;font-size:.75rem;">· ' + esc(reportKindLabel(r.kind)) + ' · ' + esc(r.status) + '</span></div>' +
-      '<div class="e" style="white-space:normal;margin-top:3px;">By <b>' + esc(r.author) + '</b>' + (au && au.banned ? ' <span class="adm-tag">BANNED</span>' : '') + ' · reported by ' + esc(r.reporter) + ' · ' + timeAgo(r.ts) + '</div>' +
-      (r.caption ? '<div class="e" style="white-space:normal;margin-top:4px;">“' + esc(r.caption) + '”</div>' : '') +
-      (r.details ? '<div class="e" style="white-space:normal;margin-top:4px;">Note: ' + esc(r.details) + '</div>' : '') +
-      '<div class="adm-actions"><button class="adm-btn ban del">🗑 Delete content</button>' +
-      (au ? '<button class="adm-btn ' + (au.banned ? 'ok' : 'ban') + ' bn">' + (au.banned ? 'Unban author' : '🚫 Ban author') + '</button>' : '') +
-      '<button class="adm-btn dis">' + (r.status === 'open' ? 'Dismiss' : 'Reopen') + '</button></div>';
-    card.querySelector('.del').onclick = () => adminDeleteReported(r.id);
-    const bn = card.querySelector('.bn'); if (bn) bn.onclick = () => adminBanReported(r.id);
-    card.querySelector('.dis').onclick = () => adminDismissReport(r.id);
-    body.appendChild(card);
-  });
-};
-window.adminDeleteReported = async function (rid) {
-  const r = reports.find(x => x.id === rid);
-  if (!r || !r.itemId || !confirm('Delete this content permanently?')) return;
-  const { data, error } = await sb.rpc('admin_delete_content', { k: REPORT_KIND[r.kind] || r.kind, item: r.itemId, why: 'report #' + rid });
-  if (error) { showMsgBox('Could not delete: ' + error.message); return; }
-  if (data && data.bucket && (data.paths || []).length) sb.storage.from(data.bucket).remove(data.paths).then(() => {});
-  const same = reports.filter(x => x.kind === r.kind && x.itemId === r.itemId && x.status === 'open');
-  for (const x of same) { await sb.rpc('admin_resolve_report', { report: x.id, new_status: 'resolved', why: 'content deleted' }); x.status = 'actioned'; }
-  const it = findItem(r.kind, r.itemId);
-  if (it) { const l = getList(r.kind); l.splice(l.indexOf(it), 1); }
-  saveToLocalStorage(); refreshAfterAdminChange(); renderAdminReports();
-};
-window.adminBanReported = async function (rid) {
-  const r = reports.find(x => x.id === rid); if (!r || !r.authorId) return;
-  await adminToggleBan(r.authorId);
-};
-window.adminDismissReport = async function (rid) {
-  const r = reports.find(x => x.id === rid); if (!r) return;
-  let res;
-  if (r.status === 'open') res = await sb.rpc('admin_resolve_report', { report: rid, new_status: 'dismissed', why: null });
-  else res = await sb.from('reports').update({ status: 'open', resolved_by: null, resolved_at: null }).eq('id', rid);
-  if (res.error) { showMsgBox('Could not update the report: ' + res.error.message); return; }
-  r.status = r.status === 'open' ? 'dismissed' : 'open'; renderAdminReports();
 };
 
 /* ---- Auto-responses (the server sends the replies, even when you are offline) ---- */
@@ -7221,42 +6752,6 @@ async function aiThinkAsync(raw){
   } catch(e){}
   return aiThink(raw);
 }
-
-/* ===== Administration asks for a password (checked on the server, not stored in this page) ===== */
-window.openAdminGate = async function () {
-  if (!currentUser || currentUser.isGuest) return;
-  if (realUser()) {
-    // ask the server right now instead of trusting what was loaded at login
-    let uid = currentUser.id, mail = '';
-    try { const g = await sb.auth.getUser(); if (g && g.data && g.data.user) { uid = g.data.user.id; mail = g.data.user.email || ''; } } catch (e) {}
-    const r = await sb.from('profiles').select('is_admin,name').eq('id', uid).maybeSingle();
-    if (r.error) { showMsgBox('Could not check your admin status: ' + r.error.message); return; }
-    if (!r.data) { showMsgBox('No profile was found for the account you are logged in with (' + mail + ', id ' + String(uid).slice(0, 8) + '). Log out and log in again.'); return; }
-    currentUser.isAdmin = !!r.data.is_admin;
-    if (!currentUser.isAdmin) { showMsgBox('This area is for administrators only. The server says: is_admin = ' + r.data.is_admin + ' for ' + (mail || r.data.name) + ' (id ' + String(uid).slice(0, 8) + ').'); return; }
-  } else if (!currentUser.isAdmin) { showMsgBox('This area is for administrators only.'); return; }
-  adminUnlocked = false;
-  document.getElementById('admin-pass-input').value = '';
-  openModal('admin-gate-modal');
-  setTimeout(() => { const i = document.getElementById('admin-pass-input'); if (i) i.focus(); }, 80);
-};
-window.submitAdminPassword = async function () {
-  if (needKey()) return;
-  const v = document.getElementById('admin-pass-input').value.trim();
-  const lock = loginLocked('admin');
-  if (lock) { showMsgBox('Too many attempts. Try again in ' + lock + ' seconds.'); return; }
-  const r = await sb.rpc('check_admin_code', { code: v });
-  if (r.error) {
-    const missing = /check_admin_code|PGRST202|42883|schema cache/i.test((r.error.code || '') + ' ' + (r.error.message || ''));
-    showMsgBox(missing ? 'The admin password check is not set up on the server yet. Run admin_gate.sql in Supabase.' : 'Could not check the password. Please try again.');
-    return;
-  }
-  if (r.data !== true) { loginFailed('admin'); showMsgBox('Wrong password.'); return; }
-  adminUnlocked = true;
-  closeModal('admin-gate-modal');
-  document.getElementById('admin-pass-input').value = '';
-  openAdminPanel();
-};
 
 /* ===== Security helpers ===== */
 function safeUrl(u){ try { const x = new URL(String(u || ''), location.href); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '#'; } catch(e){ return '#'; } }
@@ -7833,7 +7328,18 @@ function onProfileChanged(row) {
     u.name = row.name; u.avatarColor = row.avatar_color || u.avatarColor; u.avatarImage = row.avatar_url || null;
     u.publicNote = row.public_note || ''; u.isPrivate = !!row.is_private; u.verified = !!row.verified; u.banned = !!row.banned;
   }
-  if (row.id === currentUser.id) return;
+  if (row.id === currentUser.id) {
+    // An admin just banned (or unbanned) the account that is live in this tab right now.
+    if (row.banned && !currentUser.banned) {
+      currentUser.banned = true;
+      try { sb.auth.signOut(); } catch (e) {}
+      currentUser = null;
+      try { localStorage.removeItem('fullview_current_user'); } catch (e) {}
+      showMsgBox('Your account has been banned by an administrator.');
+      try { location.reload(); } catch (e) {}
+    }
+    return;
+  }
   clearTimeout(_profTimer);
   _profTimer = setTimeout(async () => {
     try {
