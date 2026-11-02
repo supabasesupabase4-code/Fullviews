@@ -542,6 +542,16 @@
             word-break: break-word;
         }
 
+        .chat-photo {
+            max-width: 220px;
+            max-height: 280px;
+            border-radius: 10px;
+            display: block;
+            margin-top: 4px;
+            cursor: pointer;
+            object-fit: cover;
+        }
+
         .message.sent {
             background: var(--primary);
             color: white;
@@ -4768,7 +4778,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                         <div class="rec-bar" id="rec-bar"><span class="rec-dot"></span><span class="rec-time" id="rec-time">0:00</span><button class="rec-cancel" onclick="cancelVoice()">Cancel</button><button class="rec-send" onclick="finishVoice('${targetId}')">Send ➤</button></div>
                         <button onclick="toggleTagDropdown()" title="Tag accounts" style="color: var(--primary); font-size: 1.1rem; padding: 0 8px; font-weight: bold;">@</button>
                         <input type="text" id="chat-input-text" placeholder="Type a message or @tag..." oninput="checkTagTrigger(this.value)" onkeydown="if(event.key==='Enter') sendChatMessage(${jsArg(targetId)})">
-                        ${targetId === 'full-ai' ? '' : `<button type="button" class="mic-btn" title="Record a voice message" aria-label="Record a voice message" onclick="startVoice(${jsArg(targetId)})">🎤</button>`}<button onclick="sendChatMessage(${jsArg(targetId)})">Send</button>
+                        ${targetId === 'full-ai' ? '' : `<input type="file" id="chat-photo-input" accept="image/*" style="display:none;" onchange="handleChatPhotoPick(${jsArg(targetId)}, this.files[0]); this.value='';"><button type="button" class="mic-btn" title="Send a photo" aria-label="Send a photo" onclick="document.getElementById('chat-photo-input').click()">📷</button><button type="button" class="mic-btn" title="Record a voice message" aria-label="Record a voice message" onclick="startVoice(${jsArg(targetId)})">🎤</button>`}<button onclick="sendChatMessage(${jsArg(targetId)})">Send</button>
                     </div>
                 </div>
             `;
@@ -4793,10 +4803,18 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     div.innerText = msg.text;
                 } else if (msg.sender === 'full-ai' || (msg.senderName && msg.senderName !== currentUser.name)) {
                     div.className = 'message received';
-                    div.innerText = (msg.senderName ? msg.senderName + ': ' : '') + (msg.share ? (msg.note || '') : msg.text);
+                    div.innerText = (msg.senderName ? msg.senderName + ': ' : '') + (msg.image ? '' : (msg.share ? (msg.note || '') : msg.text));
                 } else {
                     div.className = 'message sent';
-                    div.innerText = msg.share ? (msg.note || '') : msg.text;
+                    div.innerText = (msg.senderName ? msg.senderName + ': ' : '') + (msg.image ? '' : (msg.share ? (msg.note || '') : msg.text));
+                }
+                if (msg.image) {
+                    let img = document.createElement('img');
+                    img.className = 'chat-photo';
+                    img.src = msg.image;
+                    img.loading = 'lazy';
+                    img.onclick = () => window.open(msg.image, '_blank');
+                    div.appendChild(img);
                 }
                 if (msg.audio) {
                     div.innerText = '';
@@ -5065,6 +5083,24 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             if (!messages[targetId]) messages[targetId] = [];
             messages[targetId].push({ sender: currentUser.id, senderName: currentUser.name, text: '🎤 Voice message (' + fmtVoice(dur) + ')', audio: dataUrl, duration: dur, ts: Date.now() });
             runAutoResponses(targetId, '🎤 Voice message', currentUser.name);
+            if (String(window.currentChatId) === String(targetId)) renderChatMessages(targetId);
+            saveToLocalStorage();
+        }
+
+        function handleChatPhotoPick(targetId, file) {
+            if (!file) return;
+            if (!file.type || !file.type.startsWith('image/')) { showMsgBox('Please choose an image file.'); return; }
+            if (file.size > 8 * 1024 * 1024) { showMsgBox('Photos must be smaller than 8 MB.'); return; }
+            let reader = new FileReader();
+            reader.onload = function () { sendChatPhoto(targetId, reader.result, file); };
+            reader.onerror = function () { showMsgBox('Could not read that photo. Please try another.'); };
+            reader.readAsDataURL(file);
+        }
+        function sendChatPhoto(targetId, dataUrl) {
+            if (!currentUser) return;
+            if (!messages[targetId]) messages[targetId] = [];
+            messages[targetId].push({ sender: currentUser.id, senderName: currentUser.name, text: '📷 Photo', image: dataUrl, ts: Date.now() });
+            runAutoResponses(targetId, '📷 Photo', currentUser.name);
             if (String(window.currentChatId) === String(targetId)) renderChatMessages(targetId);
             saveToLocalStorage();
         }
@@ -6210,6 +6246,7 @@ function mapMsg(r, byId, urls) {
   const u = byId.get(r.sender_id);
   const m = { id: r.id, sender: r.sender_id, senderName: u ? u.name : 'Unknown', text: r.body || '', ts: new Date(r.created_at).getTime() };
   if (r.audio_path) { if (urls[r.audio_path]) { m.audio = urls[r.audio_path]; m.duration = r.duration || 0; } else m.text = '🎤 Voice message (expired link, reload)'; }
+  if (r.image_path) m.image = pubUrl('media', r.image_path);
   if (r.share) { m.share = Object.assign({}, r.share); m.note = m.share._note || ''; delete m.share._note; }
   if (r.is_auto) m.auto = true;
   return m;
@@ -6434,6 +6471,25 @@ window.sendVoiceMessage = async function (targetId, dataUrl, dur) {
     const ok = await pushMessage(targetId, local, { body: local.text, audio_path: path, duration: Math.round(dur || 0) });
     if (!ok) sb.storage.from('voice').remove([path]);
   } catch (e) { dropLocalMsg(targetId, local); showMsgBox('Voice message not sent: ' + ((e && e.message) || 'connection problem')); }
+};
+const _origSendChatPhoto = window.sendChatPhoto;
+window.sendChatPhoto = async function (targetId, dataUrl, file) {
+  if (!realUser() || targetId === 'full-ai') return _origSendChatPhoto(targetId, dataUrl);
+  const before = (messages[targetId] || []).length;
+  _origSendChatPhoto(targetId, dataUrl);
+  const list = messages[targetId]; if (!list || list.length === before) return;
+  const local = list[list.length - 1];
+  try {
+    const mime = (file && file.type) || (dataUrl.match(/^data:([^;,]+)/) || [])[1] || 'image/jpeg';
+    const path = currentUser.id + '/chat/' + Date.now() + '.' + extFor(mime, 'jpg');
+    const blob = file || dataUrlToBlob(dataUrl);
+    const up = await sb.storage.from('media').upload(path, blob, { contentType: blob.type || mime || undefined });
+    if (up.error) throw up.error;
+    local.image = pubUrl('media', path);
+    const ok = await pushMessage(targetId, local, { body: '📷 Photo', image_path: path });
+    if (!ok) sb.storage.from('media').remove([path]);
+    else if (String(window.currentChatId) === String(targetId)) renderChatMessages(targetId);
+  } catch (e) { dropLocalMsg(targetId, local); showMsgBox('Photo not sent: ' + ((e && e.message) || 'connection problem')); }
 };
 const _origSendShare = window.sendShareTo;
 window.sendShareTo = function (targetId) {
