@@ -899,7 +899,14 @@ body{background:radial-gradient(90% 60% at 15% 0%,#e9deff 0%,transparent 60%),ra
 .nav-item{position:relative;font-size:1.4rem}
 .nav-item svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
 .nav-item.active svg{transform:translateY(-2px) scale(1.08)}
-.nav-item.active::after{content:"";position:absolute;bottom:11px;width:5px;height:5px;border-radius:50%;background:var(--grad)}
+.nav-item{z-index:1}
+.nav-item.active{color:#fff}
+.nav-item.active .nav-avatar-ring{border-color:#fff}
+.nav-pill{position:absolute;left:0;top:15px;height:40px;width:56px;border-radius:999px;z-index:0;pointer-events:none;
+  background:linear-gradient(135deg,#7c3aed 0%,#06b6d4 100%);box-shadow:0 6px 16px rgba(124,58,237,.35);
+  transform:translateX(0);opacity:0;will-change:transform}
+.nav-pill.ready{opacity:1}
+.nav-pill.spring{transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
 .nav-item.active .nav-avatar-ring{border-color:#ff3d8b}
 .story-ring{background:var(--grad)!important;box-shadow:0 8px 16px -8px rgba(255,61,139,.6)}
 .post-card{border-radius:24px;border:0;margin:14px 12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
@@ -1474,6 +1481,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     <div class="avatar" id="nav-user-avatar" style="width:22px; height:22px; font-size:0.7rem;">U</div>
                 </div>
             </button>
+            <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
         </nav>
     </div>
 
@@ -6712,5 +6720,26 @@ window.publishMinim = async function(){
 });
 </script>
 
+
+<script>
+/* ===== Sliding pill: a violet -> cyan pill springs to the active bottom-nav tab ===== */
+(function () {
+  var nav = document.getElementById('main-nav'), pill = document.getElementById('nav-pill');
+  if (!nav || !pill) return;
+  var placed = false;
+  function movePill() {
+    var a = nav.querySelector('.nav-item.active');
+    if (!a || !a.offsetWidth) return;
+    var x = a.offsetLeft + (a.offsetWidth - pill.offsetWidth) / 2;
+    if (!placed) { pill.style.transform = 'translateX(' + x + 'px)'; pill.classList.add('ready'); placed = true; requestAnimationFrame(function () { pill.classList.add('spring'); }); return; }
+    pill.style.transform = 'translateX(' + x + 'px)';
+  }
+  var _st = window.switchTab;
+  if (typeof _st === 'function') window.switchTab = function () { var r = _st.apply(this, arguments); movePill(); return r; };
+  if (window.ResizeObserver) new ResizeObserver(function () { placed = false; pill.classList.remove('spring'); movePill(); }).observe(nav);
+  window.addEventListener('resize', function () { placed = false; pill.classList.remove('spring'); movePill(); });
+  movePill();
+})();
+</script>
 </body>
 </html>
