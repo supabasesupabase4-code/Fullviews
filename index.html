@@ -3,19 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' data: blob: https://vkvgaxwaqbqwsklqwdeq.supabase.co wss://vkvgaxwaqbqwsklqwdeq.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
-    <meta name="referrer" content="no-referrer">
-    <script>
-/* Security: force HTTPS and refuse to be framed by other sites (clickjacking) */
-(function () {
-  try {
-    var h = location.hostname;
-    if (location.protocol === 'http:' && h !== 'localhost' && h !== '127.0.0.1') location.replace('https:' + location.href.substring(location.protocol.length));
-    if (window.top !== window.self) { document.documentElement.style.display = 'none'; window.top.location = window.self.location; }
-  } catch (e) { document.documentElement.style.display = 'none'; }
-})();
-</script>
-
     <title>fullview – share photos, Fulls and stories</title>
     <meta name="description" content="fullview is a social app to share photos, short videos (Fulls) and stories, chat with friends and discover new people.">
     <meta property="og:type" content="website">
@@ -910,14 +897,7 @@ body{background:radial-gradient(90% 60% at 15% 0%,#e9deff 0%,transparent 60%),ra
 .nav-item{position:relative;font-size:1.4rem}
 .nav-item svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
 .nav-item.active svg{transform:translateY(-2px) scale(1.08)}
-.nav-item{z-index:1}
-.nav-item.active{color:#fff}
-.nav-item.active .nav-avatar-ring{border-color:#fff}
-.nav-pill{position:absolute;left:0;top:15px;height:40px;width:56px;border-radius:999px;z-index:0;pointer-events:none;
-  background:linear-gradient(135deg,#7c3aed 0%,#06b6d4 100%);box-shadow:0 6px 16px rgba(124,58,237,.35);
-  transform:translateX(0);opacity:0;will-change:transform}
-.nav-pill.ready{opacity:1}
-.nav-pill.spring{transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.nav-item.active::after{content:"";position:absolute;bottom:11px;width:5px;height:5px;border-radius:50%;background:var(--grad)}
 .nav-item.active .nav-avatar-ring{border-color:#ff3d8b}
 .story-ring{background:var(--grad)!important;box-shadow:0 8px 16px -8px rgba(255,61,139,.6)}
 .post-card{border-radius:24px;border:0;margin:14px 12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
@@ -1140,7 +1120,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <div style="background: #e8f4fd; border: 1px solid #b6dffd; padding: 12px 16px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; text-align: center;">
                 <p style="color: #0056b3; font-size: 0.9rem; font-weight: 600; line-height: 1.4;">enjoy your first time in fullviews</p>
             </div>
-            <p style="font-size:.75rem;color:var(--secondary-text);max-width:320px;margin-bottom:12px;line-height:1.4;">Demo version: your account and content are saved only on this device and browser. Use <b>Back up my data</b> in your profile menu to keep a copy.</p>
+            <p style="font-size:.75rem;color:var(--secondary-text);max-width:320px;margin-bottom:12px;line-height:1.4;">Tip: use <b>Back up my data</b> in your profile menu to keep a copy of your content.</p>
 
             <button class="btn" style="background: white; color: var(--text); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;" onclick="enterAsInvitant()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6d4aff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4-6 8-6s7 1.8 8 6"/></svg>
@@ -1167,7 +1147,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="reg-password" class="input-field" maxlength="100" placeholder="Password (min. 8 characters, letters and numbers)">
+                <input type="password" id="reg-password" class="input-field" maxlength="100" placeholder="Password (min. 6 characters)">
             </div>
 
             <label class="auth-consent"><input type="checkbox" id="reg-consent"><span>I am at least 13 years old and I accept the <a onclick="openLegal('terms')">Terms of Use</a> and the <a onclick="openLegal('privacy')">Privacy Policy</a>.</span></label>
@@ -1492,7 +1472,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     <div class="avatar" id="nav-user-avatar" style="width:22px; height:22px; font-size:0.7rem;">U</div>
                 </div>
             </button>
-            <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
         </nav>
     </div>
 
@@ -1585,25 +1564,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <button class="btn secondary" onclick="closeModal('minim-modal')">Cancel</button>
                 <button class="btn" id="minim-publish-btn" disabled onclick="publishMinim()">Share Full</button>
             </div>
-        </div>
-    </div>
-
-    <div class="modal" id="google-connect-modal">
-        <div class="modal-content" style="max-width: 360px; text-align: left;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                <svg width="24" height="24" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.86 2.08-1.82 2.72v2.26h2.94c1.72-1.58 2.78-3.9 2.78-6.63z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.94-2.26c-.81.54-1.84.86-3.02.86-2.32 0-4.29-1.57-5-3.68H.96v2.33C2.45 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M4 10.74c-.19-.54-.3-1.12-.3-1.74s.11-1.2.3-1.74V4.93H.96C.35 6.13 0 7.5 0 9s.35 2.87.96 4.07l3.04-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.45 2.02.96 4.93l3.04 2.33c.71-2.11 2.68-3.68 5-3.68z"/></svg>
-                <h3 style="font-size: 1.1rem; color: var(--text);">Sign in with Google</h3>
-            </div>
-            <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 15px;">Select an existing Google account or connect a new one to access your fullview account.</p>
-            <p style="background:#fff7e0;border:1px solid #ffe08a;color:#6b4e00;font-size:.78rem;line-height:1.4;padding:8px 10px;border-radius:8px;margin-bottom:12px;"><b>Demo sign-in:</b> this is a simulated Google sign-in. No real Google account or password is used, so only add an email you own.</p>
-            
-            <div id="google-accounts-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-bottom: 15px;"></div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 10px;">
-                <button class="btn secondary" style="width: 100%; text-align: center; background: white; border: 1px solid var(--border);" onclick="addNewGoogleAccountPrompt()">+ Use another Google account</button>
-            </div>
-
-            <button class="btn secondary" style="width: 100%; margin-top: 5px;" onclick="closeModal('google-connect-modal')">Cancel</button>
         </div>
     </div>
 
@@ -1728,22 +1688,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         </div>
     </div>
 
-    <div class="modal" id="minims-payment-modal">
-        <div class="modal-content" style="max-width: 360px;">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">👑</div>
-            <h3 style="margin-bottom: 6px;">Unlock Fulls</h3>
-            <p style="color:var(--secondary-text); font-size:0.85rem; margin-bottom:20px; line-height: 1.4;">
-                Get exclusive access to Fulls, custom badges, and advanced features across fullview.
-            </p>
-            <div style="background: #f0f8ff; border: 1px solid #b3d7ff; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <span style="font-size: 0.85rem; color: #0056b3; display: block; font-weight: 600;">One-Time Upgrade</span>
-                <span style="font-size: 1.8rem; font-weight: bold; color: #004085;">$10.00</span>
-            </div>
-            <button class="btn" onclick="processMinimsPayment()" style="background: linear-gradient(135deg, #ff9500, #ff5e00); margin-top:0; width:100%;">Pay $10 & Unlock Now</button>
-            <button class="btn secondary" style="margin-top:8px; width:100%;" onclick="closeModal('minims-payment-modal')">Cancel</button>
-        </div>
-    </div>
-
     <script>
         // ===== Security helpers (hashing, validation) =====
         // NOTE: fullview currently runs entirely in the browser. These helpers make the demo safer,
@@ -1856,10 +1800,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             { id: 2, name: "Alex Rivera", email: "alex@gmail.com", avatarColor: "#bc1888", following: false, friendStatus: 'none', publicNote: "Coding all day." },
             { id: 3, name: "Sophia Lee", email: "sophia@gmail.com", avatarColor: "#0095f6", following: false, friendStatus: 'none', publicNote: "" }
         ];
-        let googleAccounts = [
-            { id: 99991234, name: "Google User", email: "google.user@gmail.com", avatarColor: "#4285F4", avatarImage: svgPlaceholder('#4285F4', 'G', 120), loginProvider: 'Google OAuth' },
-            { id: 99995678, name: "Alex Google", email: "alex.google@gmail.com", avatarColor: "#34A853", avatarImage: null, loginProvider: 'Google OAuth' }
-        ];
+        let googleAccounts = [];
         let posts = [
             { id: 101, authorName: "Emma Watson", authorColor: "#e6683c", image: svgPlaceholder('#e6683c', 'Emma Post', 600), caption: "Enjoying the wonderful weather today! ☀️" }
         ];
@@ -1912,8 +1853,9 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         // The admin password is no longer stored in clear text. Only a salted hash is kept here.
         // To change it: run hashPassword('your new password', ADMIN_SALT, 5000) in the browser console and paste the result.
         // IMPORTANT: this is still client-side. Before a public launch, admin rights must be checked on a server.
-        // Removed: no admin password hash ships in the page any more. Admin rights are decided by the server (profiles.is_admin + admin_* functions).
-        function adminPasswordOk(p) { return false; }
+        const ADMIN_SALT = 'fv-admin-v1';
+        const ADMIN_HASH = 'd5e49aca3a4e3e08eff6a362f0714bdd3d286e92e467adefca23577054329238';
+        function adminPasswordOk(p) { return hashPassword(p, ADMIN_SALT, 5000) === ADMIN_HASH; }
         let adminUnlocked = false, adminView = 'accounts', adminRoom = null, adminQuery = '';
 
         const VERIFIED_SVG = '<svg viewBox="0 0 24 24"><path fill="#0095f6" d="M12 1.8l2.4 1.7 2.9-.2 1.2 2.7 2.6 1.3-.3 2.9 1.7 2.4-1.7 2.4.3 2.9-2.6 1.3-1.2 2.7-2.9-.2-2.4 1.7-2.4-1.7-2.9.2-1.2-2.7-2.6-1.3.3-2.9L1.8 12l1.7-2.4-.3-2.9 2.6-1.3 1.2-2.7 2.9.2z"/><path fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M8 12.2l2.7 2.7L16 9.5"/></svg>';
@@ -2202,9 +2144,8 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 
         function saveToLocalStorage() {
             try {
-                const _real = (typeof realUser === 'function' && realUser());
-                if (!_real) localStorage.setItem('fullview_current_user', JSON.stringify(currentUser));
-                localStorage.setItem('fullview_users', JSON.stringify(_real ? users.map(u => Object.assign({}, u, { email: '' })) : users));
+                localStorage.setItem('fullview_current_user', JSON.stringify(currentUser));
+                localStorage.setItem('fullview_users', JSON.stringify(users));
                 localStorage.setItem('fullview_google_accounts', JSON.stringify(googleAccounts));
                 localStorage.setItem('fullview_posts', JSON.stringify(posts));
                 localStorage.setItem('fullview_stories', JSON.stringify(stories));
@@ -2716,10 +2657,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         function closeModal(modalId) {
             stopMusic();
             document.getElementById(modalId).classList.remove('active');
-        }
-
-        function openNewReelComingSoon() {
-            openDrawerScreen('New Full');
         }
 
         function previewImageCompressed(input, previewId) {
@@ -5049,7 +4986,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             { k: ['like', 'repost', 'comment', 'react'], a: "Use the ❤ to like, 💬 to comment and 🔁 to repost. You can't repost your own content, and reposting again removes your repost." },
             { k: ['block', 'unblock'], a: "Open your profile, tap the ☰ menu, choose Block and type the person's exact name. Their posts, stories and Fulls disappear for you. Unblock from the same list.", more: "Blocked people are also hidden from Explore, tagging and chats." },
             { k: ['private', 'privacy', 'public account'], a: "In the ☰ menu, open Privacy to switch your account between Public and Private." },
-            { k: ['close friend', 'close friends'], a: "Close Friends is a private list you manage from the ☰ menu. Showing stories only to Close Friends is coming soon." },
+            { k: ['close friend', 'close friends'], a: "Close Friends is a private list you manage from the ☰ menu." },
             { k: ['verified', 'badge', 'blue tick'], a: "The verified badge is awarded by fullview admins to trusted accounts. It can't be requested through chat." },
             { k: ['chat', 'message', 'dm', 'tag', 'mention', '@'], a: "Messages has a Global Chatroom, direct chats with friends, and me. Type @ in a chat to tag someone from the list.", more: "Direct messages unlock once a friend request is accepted." },
             { k: ['follow', 'friend', 'request'], a: "Find people in Explore (the search tab) and tap Follow. When the request is accepted you become friends and can message each other." },
@@ -5373,25 +5310,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             document.getElementById('profile-drawer-menu').classList.remove('active');
         }
 
-        function openDrawerScreen(titleName) {
-            closeProfileDrawer();
-            let screen = document.getElementById('drawer-sub-screen');
-            document.getElementById('drawer-screen-title').innerText = titleName;
-            
-            let body = document.getElementById('drawer-screen-body');
-            body.innerHTML = `
-                <div class="coming-soon-banner">COMING SOON</div>
-                <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; text-align:center;">
-                    <div style="font-size: 3.5rem; margin-bottom: 15px;">🚀</div>
-                    <h2 style="margin-bottom: 10px;">${titleName} Coming Soon</h2>
-                    <p style="color: var(--secondary-text); font-size: 0.95rem; line-height: 1.5; max-width: 320px;">
-                        This feature is currently under active development. Stay tuned for updates in upcoming releases!
-                    </p>
-                </div>
-            `;
-            screen.classList.add('active');
-        }
-
         function closeDrawerScreen() {
             document.getElementById('drawer-sub-screen').classList.remove('active');
         }
@@ -5399,11 +5317,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         function openMinimsPaymentModal() {
             closeProfileDrawer();
             showMsgBox('Fulls are free for everyone. Payments are not enabled in fullview.');
-        }
-
-        function processMinimsPayment() {
-            closeModal('minims-payment-modal');
-            showMsgBox('Payments are not enabled. No money was charged and nothing was unlocked because Fulls are free.');
         }
 
         // ================= REPORTS, LEGAL, ACCOUNT DELETION, TIME LIMIT =================
@@ -5621,35 +5534,25 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             };
             wrap('openCrosspostingDrawerScreen', 'Not connected to other apps yet. This setting is saved for a future update.');
             wrap('openStoriesLiveDrawerScreen', 'These preferences are saved but not enforced yet.');
-            wrap('openCloseFriendsDrawerScreen', 'Your list is saved. Showing stories only to Close Friends is coming soon.');
+            wrap('openCloseFriendsDrawerScreen', 'Your list is saved.');
         })();
     </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* ===== Supabase connection: stage 1 (sign up, login, profiles) ===== */
 const SUPABASE_URL = 'https://vkvgaxwaqbqwsklqwdeq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Fu2jdVyPRnv5aUsqzPkXKg_MxzcqusP';   // Project Settings > API Keys > anon / publishable key
 const sbReady = !/^PASTE/.test(SUPABASE_ANON_KEY) && !!(window.supabase);
 const sb = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
-/* ---- Security: never trust values that come back from the database ---- */
-function safeColor(c, fb) { return (typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c)) ? c : (fb || '#6d4aff'); }
-function safeMediaUrl(u) {
-  if (typeof u !== 'string' || !u || u.length > 2000000 || /["'<>\s\\]/.test(u)) return null;
-  if (u.indexOf(SUPABASE_URL + '/storage/') === 0) return u;
-  if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u)) return u;
-  return null;
-}
-function safeLink(u) { return (typeof u === 'string' && /^https:\/\/[^\s"'<>\\]{1,500}$/.test(u)) ? u : null; }
-function safeText(s, max) { return String(s == null ? '' : s).replace(/[<>"'`&\\\u0000-\u001f\u007f]/g, '').slice(0, max || 60); }
 const PROFILE_COLS = 'id,name,avatar_color,avatar_url,public_note,is_private,verified,banned,is_admin,crosspost,last_name_change,created_at';
 
 function needKey() { if (!sbReady) { showMsgBox('The app is not connected to Supabase yet. Paste your anon key in the SUPABASE_ANON_KEY line of the file.'); return true; } return false; }
 function realUser() { return !!(sb && currentUser && !currentUser.isGuest); }
 
 function profileToUser(p, email) {
-  return { id: p.id, name: safeText(p.name, 30), email: email || '', password: '', loginProvider: 'Email',
-    loginTime: new Date().toLocaleString(), avatarColor: safeColor(p.avatar_color), avatarImage: safeMediaUrl(p.avatar_url),
-    publicNote: safeText(p.public_note, 100), isPrivate: !!p.is_private, verified: !!p.verified, banned: !!p.banned,
+  return { id: p.id, name: p.name, email: email || '', password: '', loginProvider: 'Email',
+    loginTime: new Date().toLocaleString(), avatarColor: p.avatar_color || '#6d4aff', avatarImage: p.avatar_url || null,
+    publicNote: p.public_note || '', isPrivate: !!p.is_private, verified: !!p.verified, banned: !!p.banned,
     isAdmin: !!p.is_admin, crosspost: !!p.crosspost, following: false, friendStatus: 'none', postsCount: 0, reelsCount: 0 };
 }
 async function refreshUsers() {
@@ -5697,15 +5600,15 @@ window.completeRegistration = async function () {
   // No matching login: try to create a new account
   const nErr = validateDisplayName(name);
   if (nErr) { loginFailed(email); showMsgBox(nErr + ' (If you already have an account, check your password.)'); return; }
-  if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) { showMsgBox('Your password must have at least 8 characters, with letters and numbers.'); return; }
+  if (password.length < 6) { showMsgBox('Your password must have at least 6 characters.'); return; }
   if (!(await nameAvailable(name))) { loginFailed(email); showMsgBox('That name is already used by another account. If this is your account, check your password.'); return; }
   const s = await sb.auth.signUp({ email, password, options: { data: { name } } });
   if (s.error) {
-    if (/already/i.test(s.error.message)) { loginFailed(email); showMsgBox('Could not sign you in. Check your details, or try a different email.'); }
+    if (/already/i.test(s.error.message)) { loginFailed(email); showMsgBox('Wrong password for this account.'); }
     else showMsgBox(s.error.message);
     return;
   }
-  if (s.data.user && s.data.user.identities && s.data.user.identities.length === 0) { loginFailed(email); showMsgBox('Could not sign you in. Check your details, or try a different email.'); return; }
+  if (s.data.user && s.data.user.identities && s.data.user.identities.length === 0) { loginFailed(email); showMsgBox('Wrong password for this account.'); return; }
   if (!s.data.session) { showMsgBox('Account created! Check your email and open the confirmation link, then log in.'); return; }
   document.getElementById('reg-password').value = '';
   await finishLogin(s.data.user);
@@ -5740,9 +5643,8 @@ window.submitVerifyLogin = async function () {
 window.logout = async function () {
   if (isGuest()) { location.reload(); return; }
   try { if (sb) await sb.auth.signOut(); } catch (e) {}
-  try { ['fullview_current_user','fullview_users','fullview_messages','fullview_friend_requests','fullview_blocked_users','fullview_close_friends','fullview_reports','fullview_autoresp','fullview_is_private','fullview_crosspost'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  try { localStorage.removeItem('fullview_current_user'); } catch (e) {}
   currentUser = null;
-  location.reload(); return;
   document.getElementById('main-nav').style.display = 'none';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('auth-screen').classList.add('active');
@@ -5841,14 +5743,14 @@ async function uploadDataUrl(bucket, path, dataUrl) {
   return pubUrl(bucket, path);
 }
 function rowToPost(r) {
-  return { id: r.id, authorName: safeText(r.author_name, 30) || 'Unknown', authorColor: safeColor(r.author_color), image: safeMediaUrl(r.image_url) || '', caption: r.caption || '',
-    song: r.song ? safeText(r.song, 120) : null, songLink: safeLink(r.song_link), synth: r.synth || null, audioDataUrl: r.audio_url || null,
+  return { id: r.id, authorName: r.author_name || 'Unknown', authorColor: r.author_color || '#6d4aff', image: r.image_url, caption: r.caption || '',
+    song: r.song || null, songLink: r.song_link || null, synth: r.synth || null, audioDataUrl: r.audio_url || null,
     mediaPath: r.image_path || null, audioPath: r.audio_path || null, createdAt: new Date(r.created_at).getTime(), likes: [], comments: [], reposts: [] };
 }
 function rowToFull(r) {
   videoUrlById[r.id] = pubUrl('fulls', r.video_path);
-  return { id: r.id, authorName: safeText(r.author_name, 30) || 'Unknown', authorColor: safeColor(r.author_color), caption: r.caption || '',
-    thumb: safeMediaUrl(r.thumb_url), duration: r.duration || 0, videoPath: r.video_path, thumbPath: r.thumb_path || null,
+  return { id: r.id, authorName: r.author_name || 'Unknown', authorColor: r.author_color || '#6d4aff', caption: r.caption || '',
+    thumb: r.thumb_url || null, duration: r.duration || 0, videoPath: r.video_path, thumbPath: r.thumb_path || null,
     createdAt: new Date(r.created_at).getTime(), likes: [], comments: [], reposts: [] };
 }
 // Keep likes/comments/reposts (still on this device until stage 3) and local repost copies
@@ -6731,26 +6633,5 @@ window.publishMinim = async function(){
 });
 </script>
 
-
-<script>
-/* ===== Sliding pill: a violet -> cyan pill springs to the active bottom-nav tab ===== */
-(function () {
-  var nav = document.getElementById('main-nav'), pill = document.getElementById('nav-pill');
-  if (!nav || !pill) return;
-  var placed = false;
-  function movePill() {
-    var a = nav.querySelector('.nav-item.active');
-    if (!a || !a.offsetWidth) return;
-    var x = a.offsetLeft + (a.offsetWidth - pill.offsetWidth) / 2;
-    if (!placed) { pill.style.transform = 'translateX(' + x + 'px)'; pill.classList.add('ready'); placed = true; requestAnimationFrame(function () { pill.classList.add('spring'); }); return; }
-    pill.style.transform = 'translateX(' + x + 'px)';
-  }
-  var _st = window.switchTab;
-  if (typeof _st === 'function') window.switchTab = function () { var r = _st.apply(this, arguments); movePill(); return r; };
-  if (window.ResizeObserver) new ResizeObserver(function () { placed = false; pill.classList.remove('spring'); movePill(); }).observe(nav);
-  window.addEventListener('resize', function () { placed = false; pill.classList.remove('spring'); movePill(); });
-  movePill();
-})();
-</script>
 </body>
 </html>
