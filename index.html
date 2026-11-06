@@ -1252,6 +1252,10 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     <span>Notifications</span>
                 </div>
             </div>
+            <div id="push-banner" class="nt-chips" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:#f3efff;">
+                <span id="push-banner-text" style="font-size:.82rem;line-height:1.35;">🔔 Get a phone notification when you receive a message</span>
+                <button id="push-banner-btn" class="nt-chip active" onclick="enablePush()">Turn on</button>
+            </div>
             <div class="nt-chips">
                 <button class="nt-chip active" data-f="all" onclick="ntFilter('all')">All</button>
                 <button class="nt-chip" data-f="view" onclick="ntFilter('view')">Views</button>
@@ -6882,6 +6886,78 @@ async function downloadApk(ev) {
   window.finishLogin = async function (u) { const ok = await _fl(u); if (ok) startPolling(); return ok; };
   const _lo = window.logout;
   window.logout = async function () { stopPolling(); return _lo.apply(this, arguments); };
+})();
+</script>
+<script>
+/* ===== Phone notifications for chat messages (Web Push) ===== */
+const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE';   // public key only; the private key stays in Supabase secrets
+(function () {
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const configured = () => !/^PASTE/.test(VAPID_PUBLIC_KEY);
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const keyBytes = s => { const r = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, c => c.charCodeAt(0)); };
+
+  async function subscribeNow() {
+    const reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC_KEY) });
+    const j = sub.toJSON();
+    const { error } = await sb.rpc('register_push', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+    if (error) throw error;
+  }
+  async function dropSubscription() {
+    if (!supported) return;
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (sub) { await sb.rpc('unregister_push', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); }
+  }
+  function refreshBanner() {
+    const box = document.getElementById('push-banner'); if (!box) return;
+    const txt = document.getElementById('push-banner-text'), btn = document.getElementById('push-banner-btn');
+    if (!supported || !configured() || !realUser() || Notification.permission === 'granted') { box.style.display = 'none'; return; }
+    box.style.display = 'flex';
+    if (Notification.permission === 'denied') { txt.textContent = '🔕 Notifications are blocked. Allow them for this site in your browser settings.'; btn.style.display = 'none'; }
+    else { txt.textContent = '🔔 Get a phone notification when you receive a message'; btn.style.display = ''; }
+  }
+  window.enablePush = async function () {
+    if (!realUser()) return showMsgBox('Log in first.');
+    if (!supported) return showMsgBox('This browser does not support phone notifications. On iPhone, add the app to your Home Screen first.');
+    if (!configured()) return showMsgBox('Notifications are not set up yet.');
+    try {
+      if (await Notification.requestPermission() !== 'granted') { refreshBanner(); return; }
+      await subscribeNow();
+      showMsgBox('Message notifications are on.');
+    } catch (e) { showMsgBox('Could not turn on notifications.'); }
+    refreshBanner();
+  };
+
+  function openFromPush(id) {
+    if (!UUID.test(id) || !realUser()) return;
+    try { switchTab('chats', document.getElementById('nav-chat-btn')); openChatRoom(id); } catch (e) {}
+  }
+  if (supported) navigator.serviceWorker.addEventListener('message', ev => {
+    if (ev.data && ev.data.type === 'open-chat') openFromPush(String(ev.data.userId));
+  });
+
+  const _fl = window.finishLogin;
+  window.finishLogin = async function (u) {
+    const ok = await _fl(u);
+    if (ok) {
+      if (supported && configured() && Notification.permission === 'granted') subscribeNow().catch(() => {});
+      const q = new URLSearchParams(location.search).get('chat');
+      if (q) { history.replaceState(null, '', location.pathname); setTimeout(() => openFromPush(q), 800); }
+      refreshBanner();
+    }
+    return ok;
+  };
+  const _lo = window.logout;
+  window.logout = async function () {
+    try { await dropSubscription(); } catch (e) {}   // this phone stops receiving the previous user's messages
+    return _lo.apply(this, arguments);
+  };
+  const _ot = window.openNotificationsTab;
+  window.openNotificationsTab = function () { refreshBanner(); return _ot.apply(this, arguments); };
 })();
 </script>
 </body>
