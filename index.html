@@ -6999,5 +6999,29 @@ window.signInWithGoogle = async function () {
   };
 })();
 </script>
+<script>
+/* ===== Auto-update: reload when a newer version of this page is on GitHub ===== */
+(function () {
+  const KEY = 'fv_last_auto_reload';
+  async function check() {
+    try {
+      if (document.hidden) return;
+      if (/[?&]code=|access_token=/.test(location.search + location.hash)) return;   // never interrupt a login
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const lm = r.headers.get('last-modified');
+      if (!r.ok || !lm) return;
+      const remote = Date.parse(lm), local = Date.parse(document.lastModified);
+      if (!remote || !local || remote <= local + 1000) return;               // already up to date
+      const last = Number(sessionStorage.getItem(KEY)) || 0;
+      if (Date.now() - last < 5 * 60 * 1000) return;                         // never loop
+      sessionStorage.setItem(KEY, String(Date.now()));
+      const u = new URL(location.href); u.searchParams.set('r', String(Date.now()));
+      location.replace(u.toString());
+    } catch (e) {}
+  }
+  window.addEventListener('load', () => setTimeout(check, 1500));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+})();
+</script>
 </body>
 </html>
