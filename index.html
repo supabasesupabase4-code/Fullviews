@@ -6890,7 +6890,7 @@ async function downloadApk(ev) {
 </script>
 <script>
 /* ===== Phone notifications for chat messages (Web Push) ===== */
-const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE';   // public key only; the private key stays in Supabase secrets
+const VAPID_PUBLIC_KEY = 'BIdCdusKNRYfSgkt0N5f9QOHUrXFCxt_oxJSn2M5iLbr9HVV53R_8LKyVE_2rm6GeWU1DikLGXt6TlpwlCB1zlw';   // public key only; the private key stays in Supabase secrets
 (function () {
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const configured = () => !/^PASTE/.test(VAPID_PUBLIC_KEY);
