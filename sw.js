@@ -2,6 +2,9 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 
+/* passthrough: lets Chrome treat the site as installable; nothing is cached, so updates stay instant */
+self.addEventListener('fetch', () => {});
+
 self.addEventListener('push', event => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch (e) {}
