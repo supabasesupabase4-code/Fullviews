@@ -5420,7 +5420,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             if (ar) ar.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
             arLabel();
             let adm = document.getElementById('drawer-admin-wrap');
-            if (adm) adm.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
+            if (adm) adm.style.display = (currentUser && currentUser.isAdmin === true && !currentUser.isGuest) ? 'block' : 'none';
             document.getElementById('profile-drawer-menu').classList.add('active');
         }
 
