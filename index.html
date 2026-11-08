@@ -1703,7 +1703,8 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <div class="sh-prev" id="share-preview"></div>
             <input type="text" id="share-note" class="input-field sh-msg" placeholder="Add a message (optional)" maxlength="200">
             <div class="sh-list" id="share-list"></div>
-            <button class="btn secondary" style="width:100%;margin-top:4px" onclick="shareExternal()">More options…</button>
+            <button class="btn" id="share-wa-btn" style="width:100%;margin-top:4px;background:#25D366;color:#fff" onclick="shareWhatsApp()">💬 Share on WhatsApp</button>
+            <button class="btn secondary" style="width:100%;margin-top:8px" onclick="shareExternal()">More options…</button>
             <button class="btn secondary" style="width:100%;margin-top:8px" onclick="closeShare()">Close</button>
         </div>
     </div>
@@ -3348,6 +3349,32 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             if (navigator.share) navigator.share({ title: 'FullView', text: text }).catch(() => {});
             else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => showMsgBox('Text copied to clipboard!')).catch(() => showMsgBox(text));
             else showMsgBox(text);
+        }
+
+        // Share a Full/post to WhatsApp: text + a link that opens THIS Full (#full=ID) or post (#post=ID).
+        function shareWhatsApp() {
+            if (!shareTarget) return;
+            let item = findItem(shareTarget.kind, shareTarget.id);
+            if (!item) return;
+            let root = rootOf(shareTarget.kind, item);
+            let noteEl = document.getElementById('share-note');
+            let note = String((noteEl && noteEl.value) || '').trim().slice(0, 200);
+            let author = String(root.authorName || 'Someone').slice(0, 40);
+            let cap = String(root.caption || '').trim().slice(0, 120);
+            let link = '';
+            if (/^https?:$/.test(location.protocol) && !root.demo && /^[A-Za-z0-9_-]{1,64}$/.test(String(root.id))) {
+                link = location.origin + location.pathname + '#' + (shareTarget.kind === 'minim' ? 'full' : 'post') + '=' + encodeURIComponent(String(root.id));
+            }
+            let text = author + ' on fullview: ' + (cap || 'Check this out') + (note ? '\n' + note : '') + (link ? '\n' + link : '');
+            try {
+                if (window.AppInventor && typeof window.AppInventor.setWebViewString === 'function') {
+                    // APK: App Inventor blocks read this prefix and open the Android share sheet
+                    window.AppInventor.setWebViewString('FVSHARE:' + text);
+                    return;
+                }
+            } catch (e) { /* fall through */ }
+            let w = window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+            if (!w && navigator.share) navigator.share({ title: 'fullview', text: text }).catch(() => {});
         }
 
         function openSharedItem(kind, id) {
@@ -5876,6 +5903,24 @@ function mergeContent(oldList, fresh) {
   const keep = oldList.filter(x => x.repostOf && !ids.has(x.id) && !x.demo && fresh.some(n => n.id === x.repostOf.id));
   return fresh.concat(keep).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
+/* ---- Shared links: open the Full / post named in the link (#full=ID or #post=ID) ---- */
+let pendingDeepLink = (function () {
+  const m = /^#(full|post)=([A-Za-z0-9_-]{1,64})$/.exec(location.hash);
+  return m ? { kind: m[1] === 'full' ? 'minim' : 'post', id: m[2] } : null;
+})();
+async function openDeepLink() {
+  if (!pendingDeepLink || !currentUser) return;
+  const d = pendingDeepLink; pendingDeepLink = null;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  const list = getList(d.kind);
+  let item = list.find(x => String(x.id) === d.id);
+  if (!item && sb) {
+    const { data } = await sb.from(d.kind === 'minim' ? 'fulls' : 'posts').select('*').eq('id', d.id).maybeSingle();
+    if (data) { item = d.kind === 'minim' ? rowToFull(data) : rowToPost(data); list.unshift(item); }
+  }
+  if (!item) { showMsgBox('This ' + (d.kind === 'post' ? 'publication' : 'Full') + ' is no longer available.'); return; }
+  openSharedItem(d.kind, item.id);
+}
 async function loadContent() {
   if (!sb) return;
   const q = t => sb.from(t).select('*').order('created_at', { ascending: false }).limit(200);
@@ -5887,6 +5932,7 @@ async function loadContent() {
   saveToLocalStorage();
   try { renderFeed(); renderStories(); renderProfileGrids(); updateMinimCount();
         if (typeof currentTabName !== 'undefined' && currentTabName === 'reels') renderMinims(); } catch (e) {}
+  try { await openDeepLink(); } catch (e) {}
 }
 const _finishLogin2 = window.finishLogin;
 window.finishLogin = async function (u) { const ok = await _finishLogin2(u); if (ok) await loadContent(); return ok; };
