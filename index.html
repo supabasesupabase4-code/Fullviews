@@ -7547,6 +7547,24 @@ window.addFullToStory = async function (id) {
 })();
 </script>
 <script>
+/* ===== Followers count on your profile = your accepted friends ===== */
+(function () {
+  function upd() {
+    const el = document.getElementById('profile-followers');
+    if (!el || !currentUser) return;
+    const n = currentUser.isGuest ? 0 : users.filter(u => {
+      if (u.id === currentUser.id || blockedUsers.includes(u.name) || u.banned) return false;
+      return friendRequests.some(r => r.status === 'accepted' && ((r.fromUserId === u.id && r.toUserId === currentUser.id) || (r.fromUserId === currentUser.id && r.toUserId === u.id))) || u.friendStatus === 'accepted';
+    }).length;
+    el.innerHTML = '<b>' + n + '</b> followers';
+  }
+  const _r = window.renderProfileGrids;
+  window.renderProfileGrids = function () { const r = _r.apply(this, arguments); try { upd(); } catch (e) {} return r; };
+  const _ls = window.loadSocial;
+  window.loadSocial = async function () { await _ls.apply(this, arguments); try { upd(); } catch (e) {} };
+})();
+</script>
+<script>
 /* ===== Icons instead of emojis (UI only; text written by users keeps its emojis) ===== */
 (function () {
   const P = d => '<path d="' + d + '"/>';
