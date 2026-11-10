@@ -1360,6 +1360,13 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     </div>
                     <span style="color:var(--secondary-text);">&gt;</span>
                 </div>
+                <div class="drawer-item" onclick="openViewsScreen()">
+                    <div class="drawer-item-left">
+                        <span class="drawer-item-icon">👁</span>
+                        <span style="font-weight: 600;">Views</span>
+                    </div>
+                    <span style="color:var(--secondary-text);">&gt;</span>
+                </div>
                 <div class="drawer-item" onclick="openSavedDrawerScreen()">
                     <div class="drawer-item-left">
                         <span class="drawer-item-icon">🔖</span>
@@ -7482,6 +7489,61 @@ window.addFullToStory = async function (id) {
   const _lo = window.logout;
   window.logout = async function () { groups = []; try { if (chan) sb.removeChannel(chan); } catch (e) {} chan = null; return _lo.apply(this, arguments); };
   document.addEventListener('visibilitychange', () => { if (!document.hidden && realUser()) loadGroups(); });
+})();
+</script>
+<script>
+/* ===== Views screen: views per Full, Full Score, progress to automatic verification ===== */
+(function () {
+  const GOAL = 1000000;
+  const $ = id => document.getElementById(id);
+  const num = n => Number(n || 0).toLocaleString('en');
+  const compact = n => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(n || 0));
+  function close() { const o = $('fvx-views'); if (o) o.remove(); }
+  function open(html) {
+    close();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = 'fvx-views';
+    ov.innerHTML = '<div class="fvx-sheet" style="min-height:60vh"><div class="fvx-handle"></div>' + html + '</div>';
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    document.body.appendChild(ov);
+    return ov.firstChild;
+  }
+  window.openViewsScreen = async function () {
+    try { closeProfileDrawer(); } catch (e) {}
+    if (!realUser()) { showMsgBox('Log in with an account to see the views of your Fulls.'); return; }
+    const box = open('<div class="fvx-title">Views</div><div id="fvx-v-body" style="text-align:center;color:var(--secondary-text);padding:30px 0;">Loading…</div>');
+    try { refreshUsers(); } catch (e) {}
+    const { data, error } = await sb.rpc('my_full_stats');
+    const body = $('fvx-v-body'); if (!body) return;
+    if (error || !data) { console.error('my_full_stats failed', error); body.textContent = 'Views are not available right now.'; return; }
+    const rows = data.fulls || [], total = Number(data.total_views || 0);
+    const me = users.find(u => u.id === currentUser.id) || currentUser;
+    const score = total;                                   // Full Score = total views
+    const pct = Math.min(100, (total / GOAL) * 100);
+    const verified = !!(me && me.verified);
+    let html = '<div style="background:var(--bg);border-radius:18px;padding:14px;margin-bottom:14px;text-align:left;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;">' +
+        '<div><div style="font-size:.78rem;color:var(--secondary-text);">Full Score</div><div style="font-size:1.9rem;font-weight:800;line-height:1.1;">' + num(score) + '</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:.78rem;color:var(--secondary-text);">Fulls</div><div style="font-size:1.2rem;font-weight:700;">' + num(rows.length) + '</div></div></div>' +
+      '<div style="font-size:.72rem;color:var(--secondary-text);margin-top:6px;">Full Score = the total views on your Fulls</div>' +
+      '<div style="margin-top:12px;">' + (verified
+        ? '<div style="font-weight:700;">✅ Your account is verified</div>'
+        : '<div style="height:8px;border-radius:4px;background:var(--border);overflow:hidden;"><div style="height:100%;width:' + pct.toFixed(2) + '%;background:var(--grad);"></div></div>' +
+          '<div style="font-size:.78rem;color:var(--secondary-text);margin-top:6px;">' + num(total) + ' / ' + num(GOAL) + ' views on your Fulls. Reach ' + num(GOAL) + ' and you are verified automatically.</div>') +
+      '</div></div>';
+    if (!rows.length) html += '<div style="text-align:center;color:var(--secondary-text);padding:20px 0;">You have no Fulls yet.</div>';
+    rows.forEach(r => {
+      const m = minims.find(x => x.id === r.id);
+      const cap = m ? (m.caption || m.text || '').toString().trim() : '';
+      const thumb = m && (m.thumb || m.image);
+      html += '<div class="fvx-row" data-full="' + esc(r.id) + '" style="cursor:pointer;">' +
+        (thumb ? '<img src="' + esc(thumb) + '" alt="" style="width:46px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--border);">' : '<div style="width:46px;height:60px;border-radius:10px;background:var(--grad);flex-shrink:0;"></div>') +
+        '<div style="min-width:0;flex:1;"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(cap || 'Full') + '</div>' +
+        '<div style="font-size:.8rem;color:var(--secondary-text);margin-top:3px;">👁 ' + esc(compact(r.views)) + ' views · 🤍 ' + esc(compact(r.likes)) + '</div></div>' +
+        '<div style="font-weight:700;">' + esc(num(r.views)) + '</div></div>';
+    });
+    body.style.cssText = 'text-align:left;padding:0;'; body.innerHTML = html;
+    body.querySelectorAll('[data-full]').forEach(el => { el.onclick = () => { const id = Number(el.getAttribute('data-full')); close(); try { openMinim(id); } catch (e) {} }; });
+  };
 })();
 </script>
 <script>
