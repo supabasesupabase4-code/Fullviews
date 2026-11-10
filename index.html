@@ -1353,6 +1353,13 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     </div>
                     <span style="color:var(--secondary-text);">&gt;</span>
                 </div>
+                <div class="drawer-item" onclick="openCreateGroup()">
+                    <div class="drawer-item-left">
+                        <span class="drawer-item-icon">👥</span>
+                        <span style="font-weight: 600;">Create group</span>
+                    </div>
+                    <span style="color:var(--secondary-text);">&gt;</span>
+                </div>
                 <div class="drawer-item" onclick="openSavedDrawerScreen()">
                     <div class="drawer-item-left">
                         <span class="drawer-item-icon">🔖</span>
@@ -1703,8 +1710,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             <div class="sh-prev" id="share-preview"></div>
             <input type="text" id="share-note" class="input-field sh-msg" placeholder="Add a message (optional)" maxlength="200">
             <div class="sh-list" id="share-list"></div>
-            <button class="btn" id="share-wa-btn" style="width:100%;margin-top:4px;background:#25D366;color:#fff" onclick="shareWhatsApp()">💬 Share on WhatsApp</button>
-            <button class="btn secondary" style="width:100%;margin-top:8px" onclick="shareExternal()">More options…</button>
+            <button class="btn secondary" style="width:100%;margin-top:4px" onclick="shareExternal()">More options…</button>
             <button class="btn secondary" style="width:100%;margin-top:8px" onclick="closeShare()">Close</button>
         </div>
     </div>
@@ -3351,32 +3357,6 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             else showMsgBox(text);
         }
 
-        // Share a Full/post to WhatsApp: text + a link that opens THIS Full (#full=ID) or post (#post=ID).
-        function shareWhatsApp() {
-            if (!shareTarget) return;
-            let item = findItem(shareTarget.kind, shareTarget.id);
-            if (!item) return;
-            let root = rootOf(shareTarget.kind, item);
-            let noteEl = document.getElementById('share-note');
-            let note = String((noteEl && noteEl.value) || '').trim().slice(0, 200);
-            let author = String(root.authorName || 'Someone').slice(0, 40);
-            let cap = String(root.caption || '').trim().slice(0, 120);
-            let link = '';
-            if (/^https?:$/.test(location.protocol) && !root.demo && /^[A-Za-z0-9_-]{1,64}$/.test(String(root.id))) {
-                link = location.origin + location.pathname + '#' + (shareTarget.kind === 'minim' ? 'full' : 'post') + '=' + encodeURIComponent(String(root.id));
-            }
-            let text = author + ' on fullview: ' + (cap || 'Check this out') + (note ? '\n' + note : '') + (link ? '\n' + link : '');
-            try {
-                if (window.AppInventor && typeof window.AppInventor.setWebViewString === 'function') {
-                    // APK: App Inventor blocks read this prefix and open the Android share sheet
-                    window.AppInventor.setWebViewString('FVSHARE:' + text);
-                    return;
-                }
-            } catch (e) { /* fall through */ }
-            let w = window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
-            if (!w && navigator.share) navigator.share({ title: 'fullview', text: text }).catch(() => {});
-        }
-
         function openSharedItem(kind, id) {
             let item = findItem(kind, id);
             if (!item) { showMsgBox('This ' + (kind === 'post' ? 'publication' : 'Full') + ' is no longer available.'); return; }
@@ -5010,6 +4990,8 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     div.appendChild(card);
                     if (!msg.note) div.childNodes[0].nodeType === 3 && div.removeChild(div.childNodes[0]);
                 }
+                div._msg = msg;
+                if (msg.edited && div.classList.contains('message')) { const ed = document.createElement('span'); ed.className = 'msg-edited'; ed.textContent = ' · edited'; div.appendChild(ed); }
                 box.appendChild(div);
                 if (msg.chips && msg === list[list.length - 1]) {
                     let c = document.createElement('div'); c.className = 'ai-chips';
@@ -5420,7 +5402,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             if (ar) ar.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
             arLabel();
             let adm = document.getElementById('drawer-admin-wrap');
-            if (adm) adm.style.display = (currentUser && currentUser.isAdmin === true && !currentUser.isGuest) ? 'block' : 'none';
+            if (adm) adm.style.display = (currentUser && currentUser.verified && !currentUser.isGuest) ? 'block' : 'none';
             document.getElementById('profile-drawer-menu').classList.add('active');
         }
 
@@ -5903,24 +5885,6 @@ function mergeContent(oldList, fresh) {
   const keep = oldList.filter(x => x.repostOf && !ids.has(x.id) && !x.demo && fresh.some(n => n.id === x.repostOf.id));
   return fresh.concat(keep).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
-/* ---- Shared links: open the Full / post named in the link (#full=ID or #post=ID) ---- */
-let pendingDeepLink = (function () {
-  const m = /^#(full|post)=([A-Za-z0-9_-]{1,64})$/.exec(location.hash);
-  return m ? { kind: m[1] === 'full' ? 'minim' : 'post', id: m[2] } : null;
-})();
-async function openDeepLink() {
-  if (!pendingDeepLink || !currentUser) return;
-  const d = pendingDeepLink; pendingDeepLink = null;
-  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-  const list = getList(d.kind);
-  let item = list.find(x => String(x.id) === d.id);
-  if (!item && sb) {
-    const { data } = await sb.from(d.kind === 'minim' ? 'fulls' : 'posts').select('*').eq('id', d.id).maybeSingle();
-    if (data) { item = d.kind === 'minim' ? rowToFull(data) : rowToPost(data); list.unshift(item); }
-  }
-  if (!item) { showMsgBox('This ' + (d.kind === 'post' ? 'publication' : 'Full') + ' is no longer available.'); return; }
-  openSharedItem(d.kind, item.id);
-}
 async function loadContent() {
   if (!sb) return;
   const q = t => sb.from(t).select('*').order('created_at', { ascending: false }).limit(200);
@@ -5932,7 +5896,6 @@ async function loadContent() {
   saveToLocalStorage();
   try { renderFeed(); renderStories(); renderProfileGrids(); updateMinimCount();
         if (typeof currentTabName !== 'undefined' && currentTabName === 'reels') renderMinims(); } catch (e) {}
-  try { await openDeepLink(); } catch (e) {}
 }
 const _finishLogin2 = window.finishLogin;
 window.finishLogin = async function (u) { const ok = await _finishLogin2(u); if (ok) await loadContent(); return ok; };
@@ -6233,6 +6196,7 @@ function mapMsg(r, byId, urls) {
   if (r.audio_path) { if (urls[r.audio_path]) { m.audio = urls[r.audio_path]; m.duration = r.duration || 0; } else m.text = '🎤 Voice message (expired link, reload)'; }
   if (r.share) { m.share = Object.assign({}, r.share); m.note = m.share._note || ''; delete m.share._note; }
   if (r.is_auto) m.auto = true;
+  if (r.edited_at) m.edited = true;
   return m;
 }
 async function loadSocial() {
@@ -7119,6 +7083,405 @@ window.addFullToStory = async function (id) {
     } catch (e) {}
     return r;
   };
+})();
+</script>
+<script>
+/* ===== Group chats + message menu (copy / forward / edit / delete) ===== */
+(function () {
+  let groups = [];                                   // {id, name, avatar, members:[{id, role}], role}
+  const GK = id => 'grp:' + id;
+  const isGroupKey = k => typeof k === 'string' && k.indexOf('grp:') === 0;
+  const gidOf = k => Number(String(k).slice(4));
+  const $ = id => document.getElementById(id);
+  const byIdMap = () => new Map(users.map(u => [u.id, u]));
+  const txt = s => (s == null ? '' : String(s));
+
+  const st = document.createElement('style');
+  st.textContent = `
+.fvx-ov{position:fixed;inset:0;background:rgba(10,8,30,.5);z-index:100000;display:flex;align-items:flex-end;justify-content:center}
+.fvx-sheet{background:var(--card-bg,#fff);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));color:var(--text,#171233);box-shadow:0 -10px 40px rgba(0,0,0,.25);box-sizing:border-box}
+.fvx-handle{width:40px;height:4px;border-radius:2px;background:var(--border,#e8e3f5);margin:0 auto 12px}
+.fvx-title{font-weight:700;font-size:1.05rem;text-align:center;margin-bottom:12px}
+.fvx-prev{background:var(--bg,#f6f4fc);border-radius:14px;padding:9px 12px;font-size:.88rem;margin-bottom:6px;color:var(--secondary-text,#7d77a0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fvx-act{display:flex;align-items:center;gap:12px;width:100%;padding:13px 6px;background:none;border:none;border-bottom:1px solid var(--border,#e8e3f5);font-size:.98rem;color:var(--text,#171233);text-align:left;cursor:pointer;font-family:inherit}
+.fvx-act:last-child{border-bottom:none}
+.fvx-act.danger{color:#e0245e}
+.fvx-row{display:flex;align-items:center;gap:12px;padding:9px 4px;cursor:pointer}
+.fvx-av{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;background-size:cover;background-position:center}
+.fvx-input{width:100%;border:1px solid var(--border,#e8e3f5);border-radius:12px;padding:11px 12px;font-size:1rem;font-family:inherit;background:#fff;color:var(--text,#171233);box-sizing:border-box}
+.fvx-btn{border:none;border-radius:14px;padding:12px 16px;font-weight:700;font-size:.98rem;cursor:pointer;background:var(--grad);color:#fff;font-family:inherit}
+.fvx-btn.sec{background:var(--bg,#f6f4fc);color:var(--text,#171233)}
+.fvx-btn:disabled{opacity:.6}
+.fvx-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(23,18,51,.92);color:#fff;padding:10px 16px;border-radius:20px;font-size:.88rem;z-index:100001;max-width:80%;text-align:center}
+.fvx-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border,#e8e3f5);margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:.8rem}
+.fvx-check.on{background:var(--primary,#6d4aff);border-color:var(--primary,#6d4aff)}
+.msg-edited{font-size:.7rem;opacity:.7}
+#active-chat-messages .message{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}`;
+  document.head.appendChild(st);
+
+  /* ---------- small helpers ---------- */
+  function toast(t) { const d = document.createElement('div'); d.className = 'fvx-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
+  function closeSheet() { const o = $('fvx-ov'); if (o) o.remove(); }
+  function sheet(html) {
+    closeSheet();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = 'fvx-ov';
+    ov.innerHTML = '<div class="fvx-sheet"><div class="fvx-handle"></div>' + html + '</div>';
+    ov.addEventListener('click', e => { if (e.target === ov) closeSheet(); });
+    document.body.appendChild(ov);
+    return ov.firstChild;
+  }
+  function userAv(u) {
+    if (u && u.avatarImage) return '<img class="fvx-av" src="' + esc(u.avatarImage) + '" alt="">';
+    return '<div class="fvx-av" style="background:' + esc((u && u.avatarColor) || '#7a4dff') + '">' + esc(((u && u.name) || '?')[0]) + '</div>';
+  }
+  function grpAv(g, size) {
+    const sz = size ? 'width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size / 2.4) + 'px;' : '';
+    if (g.avatar) return '<img class="fvx-av" style="' + sz + '" src="' + esc(g.avatar) + '" alt="">';
+    return '<div class="fvx-av" style="' + sz + 'background:linear-gradient(135deg,#7a4dff,#ff3d8b)">' + esc((g.name || 'G')[0]) + '</div>';
+  }
+  function friends() {
+    return users.filter(u => {
+      if (!currentUser || u.id === currentUser.id || blockedUsers.includes(u.name) || u.banned) return false;
+      return friendRequests.some(r => r.status === 'accepted' && ((r.fromUserId === u.id && r.toUserId === currentUser.id) || (r.fromUserId === currentUser.id && r.toUserId === u.id))) || u.friendStatus === 'accepted';
+    });
+  }
+  function mapG(r, byId) {
+    const u = byId.get(r.sender_id);
+    const m = { id: r.id, sender: r.sender_id, senderName: r.sender_id === currentUser.id ? currentUser.name : (u ? u.name : 'Unknown'), text: r.body || '', ts: new Date(r.created_at).getTime() };
+    if (r.share) { m.share = Object.assign({}, r.share); m.note = m.share._note || ''; delete m.share._note; }
+    if (r.edited_at) m.edited = true;
+    return m;
+  }
+
+  /* ---------- load groups + their messages ---------- */
+  async function loadGroups() {
+    if (!realUser()) { groups = []; return; }
+    const [g, m, gm] = await Promise.all([
+      sb.from('chat_groups').select('id,name,avatar_url'),
+      sb.from('chat_group_members').select('group_id,user_id,role'),
+      sb.from('group_messages').select('*').order('created_at', { ascending: false }).limit(1000)
+    ]);
+    if (g.error || m.error || gm.error) return;          // tables not created yet: groups simply stay empty
+    const me = currentUser.id, byId = byIdMap();
+    groups = (g.data || []).map(r => {
+      const mem = (m.data || []).filter(x => x.group_id === r.id).map(x => ({ id: x.user_id, role: x.role }));
+      const mine = mem.find(x => x.id === me);
+      return { id: r.id, name: r.name, avatar: r.avatar_url || null, members: mem, role: mine ? mine.role : 'member' };
+    });
+    Object.keys(messages).forEach(k => { if (isGroupKey(k)) delete messages[k]; });
+    (gm.data || []).slice().reverse().forEach(r => { const k = GK(r.group_id); (messages[k] = messages[k] || []).push(mapG(r, byId)); });
+    groups.forEach(gp => { if (!messages[GK(gp.id)]) messages[GK(gp.id)] = []; });
+    saveToLocalStorage();
+    try {
+      const cur = window.currentChatId;
+      if (cur && isGroupKey(cur)) { if (groups.some(x => GK(x.id) === cur)) renderChatMessages(cur); else renderChatList(); }
+      else if (!cur && currentTabName === 'chats') renderChatList();
+    } catch (e) {}
+  }
+  const _ls = window.loadSocial;
+  window.loadSocial = async function () { await _ls.apply(this, arguments); try { await loadGroups(); } catch (e) {} };
+
+  /* ---------- chat list + group room ---------- */
+  const _rcl = window.renderChatList;
+  window.renderChatList = function () {
+    const r = _rcl.apply(this, arguments);
+    try {
+      if (!realUser()) return r;
+      const c = $('chat-content'); if (!c) return r;
+      const ref = c.children[1] ? c.children[1].nextSibling : null;
+      const add = (inner, fn) => { const d = document.createElement('div'); d.className = 'chat-list-item'; d.innerHTML = inner; d.onclick = fn; c.insertBefore(d, ref); };
+      add('<div class="avatar" style="background:var(--grad);color:#fff;">➕</div><div><div style="font-weight:600;">New group</div><div style="font-size:.8rem;color:var(--secondary-text);">Create a group chat</div></div>', () => openCreateGroup());
+      groups.forEach(g => {
+        const av = g.avatar ? '<img src="' + esc(g.avatar) + '" class="avatar" style="object-fit:cover;" alt="">' : '<div class="avatar" style="background:linear-gradient(135deg,#7a4dff,#ff3d8b);color:#fff;">' + esc((g.name || 'G')[0]) + '</div>';
+        add(av + '<div><div style="font-weight:600;">' + esc(g.name) + '</div><div style="font-size:.8rem;color:var(--secondary-text);">Group · ' + g.members.length + ' members</div></div>', () => openChatRoom(GK(g.id)));
+      });
+    } catch (e) {}
+    return r;
+  };
+  const _ocr = window.openChatRoom;
+  window.openChatRoom = function (targetId) {
+    const r = _ocr.apply(this, arguments);
+    if (isGroupKey(targetId)) {
+      try {
+        const g = groups.find(x => GK(x.id) === targetId);
+        if (g) {
+          $('chat-header').innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="cursor:pointer;color:var(--primary);font-size:.95rem;font-weight:600;" onclick="renderChatList()">← Back</span><span id="fvx-gtitle" style="cursor:pointer;">' + esc(g.name) + ' <span style="font-size:.75rem;color:var(--secondary-text);font-weight:400;">· ' + g.members.length + ' members</span></span></div>';
+          $('fvx-gtitle').onclick = () => openGroupInfo(g.id);
+          document.querySelectorAll('#chat-content .mic-btn').forEach(b => b.remove());      // no voice messages in groups
+        }
+      } catch (e) {}
+    }
+    return r;
+  };
+  const _scm = window.sendChatMessage;
+  window.sendChatMessage = async function (targetId) {
+    if (!isGroupKey(targetId)) return _scm.apply(this, arguments);
+    if (!realUser()) return;
+    const input = $('chat-input-text'), dd = $('chat-tag-dropdown'); if (dd) dd.classList.remove('active');
+    const val = input ? input.value.trim() : ''; if (!val) return;
+    if (val.length > 2000) { showMsgBox('Messages can have at most 2000 characters.'); return; }
+    const gid = gidOf(targetId); if (!groups.some(g => g.id === gid)) return;
+    const local = { sender: currentUser.id, senderName: currentUser.name, text: val, ts: Date.now() };
+    (messages[targetId] = messages[targetId] || []).push(local);
+    input.value = ''; renderChatMessages(targetId);
+    const { data, error } = await sb.from('group_messages').insert({ group_id: gid, body: val }).select().single();
+    if (error) {
+      const l = messages[targetId], i = l.indexOf(local); if (i > -1) l.splice(i, 1);
+      renderChatMessages(targetId); showMsgBox('Message not sent.'); return;
+    }
+    local.id = data.id; local.ts = new Date(data.created_at).getTime(); saveToLocalStorage();
+  };
+
+  /* ---------- create a group ---------- */
+  function resizeImage(file, size) {
+    return new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const c = document.createElement('canvas'); c.width = c.height = size;
+        const s = Math.min(img.width, img.height);
+        c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+        URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  window.openCreateGroup = function () {
+    if (!realUser()) { showMsgBox('Log in with an account to create a group.'); return; }
+    const fr = friends();
+    if (!fr.length) { showMsgBox('Add some friends first. Only accepted friends can be added to a group.'); return; }
+    try { closeProfileDrawer(); } catch (e) {}
+    const sel = new Set(); let avatarData = null;
+    sheet('<div class="fvx-title">New group</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;">' +
+      '<div id="fvx-gav" class="fvx-av" style="width:76px;height:76px;background:var(--bg);color:var(--primary);border:2px dashed var(--border);cursor:pointer;font-size:1.6rem;">📷</div>' +
+      '<div style="font-size:.78rem;color:var(--secondary-text);">Group photo (optional)</div>' +
+      '<input type="file" id="fvx-gfile" accept="image/jpeg,image/png,image/webp" style="display:none"></div>' +
+      '<input id="fvx-gname" class="fvx-input" maxlength="40" placeholder="Group name">' +
+      '<div style="font-weight:700;margin:14px 0 6px;">Members <span id="fvx-gcount" style="color:var(--secondary-text);font-weight:400;">(0)</span></div>' +
+      '<input id="fvx-gsearch" class="fvx-input" placeholder="Search friends" style="margin-bottom:6px"><div id="fvx-glist"></div>' +
+      '<button class="fvx-btn" id="fvx-gcreate" style="width:100%;margin-top:14px;">Create group</button>');
+    const draw = () => {
+      const q = $('fvx-gsearch').value.trim().toLowerCase(), box = $('fvx-glist'); box.innerHTML = '';
+      fr.filter(u => u.name.toLowerCase().includes(q)).forEach(u => {
+        const row = document.createElement('div'); row.className = 'fvx-row';
+        row.innerHTML = userAv(u) + '<div style="font-weight:600;">' + esc(u.name) + '</div><div class="fvx-check' + (sel.has(u.id) ? ' on' : '') + '">' + (sel.has(u.id) ? '✓' : '') + '</div>';
+        row.onclick = () => { if (sel.has(u.id)) sel.delete(u.id); else if (sel.size < 49) sel.add(u.id); else toast('A group can have up to 50 people'); $('fvx-gcount').textContent = '(' + sel.size + ')'; draw(); };
+        box.appendChild(row);
+      });
+    };
+    draw();
+    $('fvx-gsearch').oninput = draw;
+    $('fvx-gav').onclick = () => $('fvx-gfile').click();
+    $('fvx-gfile').onchange = async e => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      if (!/^image\/(jpeg|png|webp)$/.test(f.type) || !/\.(jpe?g|png|webp)$/i.test(f.name) || f.size > 5 * 1024 * 1024) { toast('Choose a JPG, PNG or WebP image under 5 MB'); return; }
+      try { avatarData = await resizeImage(f, 256); const a = $('fvx-gav'); a.textContent = ''; a.style.backgroundImage = 'url(' + avatarData + ')'; a.style.border = 'none'; }
+      catch (err) { toast('This image cannot be used'); }
+    };
+    $('fvx-gcreate').onclick = async () => {
+      const name = $('fvx-gname').value.trim(), btn = $('fvx-gcreate');
+      if (!name) { toast('Enter a group name'); return; }
+      if (name.length > 40) { toast('The name can have up to 40 characters'); return; }
+      if (sel.size < 1) { toast('Pick at least one member'); return; }
+      btn.disabled = true; btn.textContent = 'Creating…';
+      let path = null, url = null;
+      try {
+        if (avatarData) {
+          path = currentUser.id + '/groups/' + (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)) + '.jpg';
+          url = await uploadDataUrl('media', path, avatarData);
+        }
+        const { data, error } = await sb.rpc('create_group', { p_name: name, p_members: Array.from(sel), p_avatar_url: url, p_avatar_path: path });
+        if (error) throw error;
+        await loadGroups(); closeSheet();
+        switchTab('chats', $('nav-chat-btn')); openChatRoom(GK(data));
+      } catch (err) {
+        console.error('create_group failed', err);
+        if (path) sb.storage.from('media').remove([path]);
+        btn.disabled = false; btn.textContent = 'Create group'; toast('Could not create the group. Please try again.');
+      }
+    };
+  };
+
+  /* ---------- group info + leave ---------- */
+  function openGroupInfo(gid) {
+    const g = groups.find(x => x.id === gid); if (!g) return;
+    const byId = byIdMap();
+    const rows = g.members.map(m => {
+      const u = m.id === currentUser.id ? currentUser : byId.get(m.id);
+      return '<div class="fvx-row" style="cursor:default">' + userAv(u) + '<div style="font-weight:600;">' + esc(u ? u.name : 'Unknown') + (m.id === currentUser.id ? ' (you)' : '') + '</div>' +
+        (m.role === 'admin' ? '<span style="margin-left:auto;font-size:.72rem;color:var(--primary);font-weight:700;">Admin</span>' : '') + '</div>';
+    }).join('');
+    sheet('<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;">' + grpAv(g, 76) +
+      '<div style="font-weight:700;font-size:1.1rem;">' + esc(g.name) + '</div><div style="font-size:.82rem;color:var(--secondary-text);">' + g.members.length + ' members</div></div>' + rows +
+      '<button class="fvx-btn" id="fvx-leave" style="width:100%;margin-top:14px;background:#e0245e;">Leave group</button>');
+    let armed = false;
+    $('fvx-leave').onclick = async () => {
+      if (!armed) { armed = true; $('fvx-leave').textContent = 'Tap again to leave'; return; }
+      const { error } = await sb.rpc('leave_group', { p_group: gid });
+      if (error) { toast('Could not leave the group'); return; }
+      closeSheet(); groups = groups.filter(x => x.id !== gid); delete messages[GK(gid)]; saveToLocalStorage(); renderChatList();
+    };
+  }
+
+  /* ---------- message menu ---------- */
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); }
+    catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (_) {} ta.remove(); }
+    toast('Copied');
+  }
+  function openMsgMenu(el) {
+    const msg = el._msg, key = window.currentChatId; if (!msg || key == null) return;
+    const mine = msg.sender === currentUser.id;
+    const srv = isSrvId(msg.id), isAi = key === 'full-ai';
+    const copyable = msg.share ? txt(msg.note) : (msg.audio ? '' : txt(msg.text));
+    const canCopy = !!copyable;
+    const canForward = realUser() && !msg.audio && !msg.auto && !isAi && (txt(msg.text) || msg.share);
+    const canEdit = mine && srv && !msg.audio && !msg.share && !isAi;
+    const canDelete = mine && (srv || isAi);
+    if (!canCopy && !canForward && !canEdit && !canDelete) return;
+    const prev = msg.audio ? 'Voice message' : (msg.share ? 'Shared ' + (msg.share.kind === 'post' ? 'post' : 'Full') : txt(msg.text));
+    const s = sheet('<div class="fvx-prev">' + esc(prev) + '</div>' +
+      (canCopy ? '<button class="fvx-act" id="fvx-a-copy">📋 Copy message</button>' : '') +
+      (canForward ? '<button class="fvx-act" id="fvx-a-fwd">➤ Forward message</button>' : '') +
+      (canEdit ? '<button class="fvx-act" id="fvx-a-edit">✏ Edit message</button>' : '') +
+      (canDelete ? '<button class="fvx-act danger" id="fvx-a-del">🗑 Delete message</button>' : ''));
+    const on = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
+    on('fvx-a-copy', () => { closeSheet(); copyText(copyable); });
+    on('fvx-a-fwd', () => forwardFlow(msg));
+    on('fvx-a-edit', () => editFlow(msg, key));
+    on('fvx-a-del', () => deleteFlow(msg, key));
+  }
+  function editFlow(msg, key) {
+    sheet('<div class="fvx-title">Edit message</div><textarea id="fvx-edit" class="fvx-input" rows="3" maxlength="2000"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;"><button class="fvx-btn sec" id="fvx-ec" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-es" style="flex:1">Save</button></div>');
+    const ta = $('fvx-edit'); ta.value = txt(msg.text); ta.focus();
+    $('fvx-ec').onclick = closeSheet;
+    $('fvx-es').onclick = async () => {
+      const nv = ta.value.trim();
+      if (!nv) { toast('The message cannot be empty'); return; }
+      if (nv === msg.text) { closeSheet(); return; }
+      const tbl = isGroupKey(key) ? 'group_messages' : 'messages';
+      const { data, error } = await sb.from(tbl).update({ body: nv }).eq('id', msg.id).select('id');
+      if (error || !data || !data.length) { toast('Could not edit the message'); return; }
+      msg.text = nv; msg.edited = true; saveToLocalStorage(); closeSheet(); renderChatMessages(key);
+    };
+  }
+  function deleteFlow(msg, key) {
+    sheet('<div class="fvx-title">Delete this message?</div><p style="text-align:center;color:var(--secondary-text);font-size:.9rem;margin:0 0 14px;">It will be deleted for everyone in this chat.</p>' +
+      '<div style="display:flex;gap:8px;"><button class="fvx-btn sec" id="fvx-dc" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-dd" style="flex:1;background:#e0245e">Delete</button></div>');
+    $('fvx-dc').onclick = closeSheet;
+    $('fvx-dd').onclick = async () => {
+      if (isSrvId(msg.id)) {
+        const tbl = isGroupKey(key) ? 'group_messages' : 'messages';
+        const { data, error } = await sb.from(tbl).delete().eq('id', msg.id).select('id');
+        if (error || !data || !data.length) { toast('Could not delete the message'); return; }
+      }
+      const l = messages[key] || [], i = l.indexOf(msg); if (i > -1) l.splice(i, 1);
+      saveToLocalStorage(); closeSheet(); renderChatMessages(key);
+    };
+  }
+  function forwardFlow(msg) {
+    const targets = friends().map(u => ({ type: 'u', id: u.id, name: u.name, u })).concat(groups.map(g => ({ type: 'g', id: g.id, name: g.name, g })));
+    if (!targets.length) { closeSheet(); toast('No friends or groups to forward to'); return; }
+    sheet('<div class="fvx-title">Forward to</div><input id="fvx-fs" class="fvx-input" placeholder="Search" style="margin-bottom:8px"><div id="fvx-fl"></div>');
+    const draw = q => {
+      const box = $('fvx-fl'); box.innerHTML = '';
+      targets.filter(t => t.name.toLowerCase().includes(q)).forEach(t => {
+        const row = document.createElement('div'); row.className = 'fvx-row';
+        row.innerHTML = (t.type === 'g' ? grpAv(t.g) : userAv(t.u)) + '<div style="font-weight:600;">' + esc(t.name) + '</div>' + (t.type === 'g' ? '<span style="margin-left:auto;font-size:.72rem;color:var(--secondary-text);">Group</span>' : '');
+        row.onclick = () => doForward(msg, t);
+        box.appendChild(row);
+      });
+    };
+    draw(''); $('fvx-fs').oninput = e => draw(e.target.value.trim().toLowerCase());
+  }
+  async function doForward(msg, t) {
+    if (!realUser()) return;
+    const body = txt(msg.text).slice(0, 2000);
+    const share = msg.share ? Object.assign({}, msg.share, { _note: msg.note || '' }) : null;
+    if (!body && !share) return;
+    closeSheet();
+    const byId = byIdMap();
+    if (t.type === 'u') {
+      const row = { room: 'direct', recipient_id: t.id, body }; if (share) row.share = share;
+      const { data, error } = await sb.from('messages').insert(row).select().single();
+      if (error) { toast('Message not forwarded'); return; }
+      const m = mapMsg(data, byId, {}); m.senderName = currentUser.name;
+      (messages[t.id] = messages[t.id] || []).push(m); saveToLocalStorage();
+      if (String(window.currentChatId) === String(t.id)) renderChatMessages(t.id);
+    } else {
+      const row = { group_id: t.id, body }; if (share) row.share = share;
+      const { data, error } = await sb.from('group_messages').insert(row).select().single();
+      if (error) { toast('Message not forwarded'); return; }
+      const k = GK(t.id);
+      (messages[k] = messages[k] || []).push(mapG(data, byId)); saveToLocalStorage();
+      if (String(window.currentChatId) === k) renderChatMessages(k);
+    }
+    toast('Forwarded to ' + t.name);
+  }
+
+  /* long press (phone) or right click (computer) on a message */
+  let pressT = null, sx = 0, sy = 0, suppress = false;
+  document.addEventListener('click', e => { if (suppress) { e.stopPropagation(); e.preventDefault(); } }, true);   // a long press must not also open the shared card
+  const msgEl = e => e.target && e.target.closest ? e.target.closest('#active-chat-messages .message') : null;
+  document.addEventListener('touchstart', e => {
+    const m = msgEl(e); if (!m || !m._msg || e.target.closest('audio')) return;
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    pressT = setTimeout(() => { pressT = null; suppress = true; setTimeout(() => { suppress = false; }, 700); openMsgMenu(m); }, 450);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pressT) return; const t = e.touches[0];
+    if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) { clearTimeout(pressT); pressT = null; }
+  }, { passive: true });
+  ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { if (pressT) { clearTimeout(pressT); pressT = null; } }));
+  document.addEventListener('contextmenu', e => { const m = msgEl(e); if (!m || !m._msg) return; e.preventDefault(); openMsgMenu(m); });
+
+  /* ---------- live updates (edits, deletes, new groups) ---------- */
+  let chan = null, tm = null;
+  function eachMsg(grp, fn) { Object.keys(messages).forEach(k => { if (isGroupKey(k) === grp) fn(k, messages[k]); }); }
+  function applyEdit(r, grp) {
+    if (!r) return;
+    eachMsg(grp, (k, list) => list.forEach(m => {
+      if (String(m.id) === String(r.id) && !m.audio && !m.share) {
+        m.text = r.body || ''; if (r.edited_at) m.edited = true;
+        saveToLocalStorage(); if (String(window.currentChatId) === k) renderChatMessages(k);
+      }
+    }));
+  }
+  function applyDelete(id, grp) {
+    if (id == null) return;
+    eachMsg(grp, (k, list) => {
+      const i = list.findIndex(m => String(m.id) === String(id));
+      if (i > -1) { list.splice(i, 1); saveToLocalStorage(); if (String(window.currentChatId) === k) renderChatMessages(k); }
+    });
+  }
+  function startGroupRealtime() {
+    if (!realUser()) return;
+    try { if (chan) sb.removeChannel(chan); } catch (e) {}
+    const refresh = () => { clearTimeout(tm); tm = setTimeout(() => { loadGroups(); }, 500); };
+    chan = sb.channel('fv-groups')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages' }, p => {
+        const r = p.new; if (!r || r.sender_id === currentUser.id) return;
+        if (!groups.some(g => g.id === r.group_id)) { refresh(); return; }
+        const k = GK(r.group_id), l = (messages[k] = messages[k] || []);
+        if (l.some(x => x.id === r.id)) return;
+        l.push(mapG(r, byIdMap())); saveToLocalStorage();
+        if (String(window.currentChatId) === k) renderChatMessages(k);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_messages' }, p => applyEdit(p.new, true))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'group_messages' }, p => applyDelete(p.old && p.old.id, true))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_group_members' }, refresh)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_group_members' }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, p => applyEdit(p.new, false))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, p => applyDelete(p.old && p.old.id, false))
+      .subscribe();
+  }
+  const _fl = window.finishLogin;
+  window.finishLogin = async function (u) { const ok = await _fl(u); if (ok) startGroupRealtime(); return ok; };
+  const _lo = window.logout;
+  window.logout = async function () { groups = []; try { if (chan) sb.removeChannel(chan); } catch (e) {} chan = null; return _lo.apply(this, arguments); };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && realUser()) loadGroups(); });
 })();
 </script>
 <script>
