@@ -1125,6 +1125,8 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 .nt-time{font-size:.75rem;color:var(--secondary-text)}
 .nt-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;background:#eee;flex-shrink:0}
 .nt-empty{text-align:center;color:var(--secondary-text);padding:40px 20px;font-size:.9rem}
+.nt-follow-btn{border:none;border-radius:14px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;background:var(--grad);color:#fff;flex-shrink:0;font-family:inherit}
+.nt-follow-btn:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -1263,6 +1265,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <button class="nt-chip active" data-f="all" onclick="ntFilter('all')">All</button>
                 <button class="nt-chip" data-f="view" onclick="ntFilter('view')">Views</button>
                 <button class="nt-chip" data-f="like" onclick="ntFilter('like')">Likes</button>
+                <button class="nt-chip" data-f="follow" onclick="ntFilter('follow')">Follows</button>
             </div>
             <div id="notif-list" style="flex:1;overflow-y:auto;"></div>
         </div>
@@ -4575,7 +4578,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                         ${avatarHtml}
                         <div>
                             <div style="font-weight:600; font-size:0.95rem;">${esc(sender.name)}</div>
-                            <div style="font-size:0.8rem; color:var(--secondary-text);">Wants to connect with you</div>
+                            <div style="font-size:0.8rem; color:var(--secondary-text);">Started following you</div>
                         </div>
                     </div>
                     <div style="display:flex; gap:6px;">
@@ -6288,7 +6291,8 @@ window.handleSearch = function (query) {
   filtered.forEach(user => {
     const div = document.createElement('div'); div.className = 'user-card';
     let btnText = 'Follow', btnStyle = '';
-    if (user.following) { btnText = 'Requested'; btnStyle = 'background: #efefef; color: var(--secondary-text);'; }
+    if (friendRequests.some(r => r.fromUserId === user.id && r.toUserId === currentUser.id && r.status === 'pending')) btnText = 'Follow back';
+    if (user.following) { btnText = 'Following'; btnStyle = 'background: #efefef; color: var(--secondary-text);'; }
     if (user.friendStatus === 'accepted') { btnText = 'Friends'; btnStyle = 'background: var(--primary); color: white;'; }
     div.innerHTML = '<div class="user-info">' + avatarHtmlFor(user) + '<div><div style="font-weight:600; font-size:0.95rem;">' + esc(user.name) + vBadge(user.name) +
       '</div><div style="font-size:0.8rem; color:var(--secondary-text);">' + esc(user.publicNote || '') + '</div></div></div>' +
@@ -6302,23 +6306,23 @@ window.handleSearch = function (query) {
 window.toggleFollow = async function (userId) {
   if (!realUser()) { showMsgBox('Please log in with an account to send friend requests.'); return; }
   const t = users.find(u => u.id === userId); if (!t) return;
-  if (t.friendStatus === 'accepted' || t.following) { showMsgBox('You are already connected or request is pending with ' + t.name + '.'); return; }
+  if (t.friendStatus === 'accepted' || t.following) { showMsgBox(t.friendStatus === 'accepted' ? 'You are already friends with ' + t.name + '.' : 'You already follow ' + t.name + '. You become friends when they follow you back.'); return; }
   if (friendRequests.some(r => r.fromUserId === t.id && r.toUserId === currentUser.id && r.status === 'pending')) return window.acceptFriendRequest(t.id);
   const { error } = await sb.from('friendships').insert({ addressee_id: t.id });
   if (error) {
     if (error.code === '23505') { await loadSocial(); showMsgBox('A request already exists with ' + t.name + '.'); }
-    else showMsgBox('Could not send the request: ' + error.message);
+    else { console.error('follow failed', error); showMsgBox('Could not follow ' + t.name + '. Please try again.'); }
     return;
   }
   friendRequests.push({ fromUserId: currentUser.id, toUserId: t.id, status: 'pending' });
   applyFriendState(); saveToLocalStorage(); handleSearch(searchValue());
-  showMsgBox('Friend request sent to ' + t.name + '!');
+  showMsgBox('You are now following ' + t.name + '. You become friends when they follow you back.');
 };
 const _origAccept = window.acceptFriendRequest;
 window.acceptFriendRequest = async function (senderId) {
   if (!realUser()) return _origAccept(senderId);
   const { error } = await sb.from('friendships').update({ status: 'accepted' }).eq('requester_id', senderId).eq('addressee_id', currentUser.id);
-  if (error) { showMsgBox('Could not accept the request: ' + error.message); return; }
+  if (error) { console.error('accept failed', error); showMsgBox('Could not follow back. Please try again.'); return; }
   _origAccept(senderId); applyFriendState(); handleSearch(searchValue());
 };
 window.declineFriendRequest = async function (senderId) {
@@ -6337,9 +6341,9 @@ window.renderFriendRequestsList = function () {
     const s = users.find(u => u.id === req.fromUserId); if (!s || blockedUsers.includes(s.name)) return;
     const item = document.createElement('div'); item.className = 'user-card';
     item.innerHTML = '<div class="user-info">' + avatarHtmlFor(s) + '<div><div style="font-weight:600; font-size:0.95rem;">' + esc(s.name) +
-      '</div><div style="font-size:0.8rem; color:var(--secondary-text);">Wants to connect with you</div></div></div>' +
-      '<div style="display:flex; gap:6px;"><button class="btn secondary acc" style="background:var(--primary); color:white; padding:6px 10px;">Accept</button>' +
-      '<button class="btn secondary dec" style="padding:6px 10px;">Decline</button></div>';
+      '</div><div style="font-size:0.8rem; color:var(--secondary-text);">Started following you</div></div></div>' +
+      '<div style="display:flex; gap:6px;"><button class="btn secondary acc" style="background:var(--primary); color:white; padding:6px 10px;">Follow back</button>' +
+      '<button class="btn secondary dec" style="padding:6px 10px;">Ignore</button></div>';
     item.querySelector('.acc').onclick = () => acceptFriendRequest(s.id);
     item.querySelector('.dec').onclick = () => declineFriendRequest(s.id);
     c.appendChild(item);
@@ -6830,7 +6834,7 @@ async function downloadApk(ev) {
   };
 
   /* ---- load notifications (likes on my items + views of my items) ---- */
-  async function fetchEvents() {
+  async function fetchEventsBase() {
     if (!realUser()) return false;
     const me = currentUser.id, byId = new Map(users.map(u => [u.id, u]));
     const mine = { post: [], story: [], full: [] }, info = new Map();
@@ -6855,6 +6859,27 @@ async function downloadApk(ev) {
     events.forEach(e => { e.item = info.get(e.kind + ':' + e.itemId) || null; e.user = byId.get(e.userId); });
     loaded = true; return true;
   }
+  /* ---- people who started following you and you have not followed back yet ---- */
+  const fkey = () => 'fullview_follow_seen_' + (currentUser ? currentUser.id : '');
+  function followEvents() {
+    const me = currentUser.id, byId = new Map(users.map(u => [u.id, u]));
+    let seen = {}; try { seen = JSON.parse(localStorage.getItem(fkey()) || '{}') || {}; } catch (e) {}
+    const out = [], keep = {};
+    friendRequests.forEach(r => {
+      if (r.toUserId !== me || r.status !== 'pending') return;
+      const u = byId.get(r.fromUserId); if (!u || u.banned || blockedUsers.includes(u.name)) return;
+      keep[u.id] = seen[u.id] || Date.now();                       // the moment this phone first saw the follow
+      out.push({ type: 'follow', userId: u.id, ts: keep[u.id], user: u });
+    });
+    try { localStorage.setItem(fkey(), JSON.stringify(keep)); } catch (e) {}
+    return out;
+  }
+  function mergeFollow() {
+    if (!realUser()) return;
+    events = events.filter(e => e.type !== 'follow').concat(followEvents()).sort((a, b) => b.ts - a.ts);
+    loaded = true;
+  }
+  async function fetchEvents() { const ok = await fetchEventsBase(); mergeFollow(); return ok; }
   function unreadCount() { return events.filter(e => e.ts > lastSeen).length; }
   function updateBadges() {
     const n = unreadCount(), t = n > 99 ? '99+' : String(n);
@@ -6870,10 +6895,22 @@ async function downloadApk(ev) {
     const box = document.getElementById('notif-list'); if (!box) return;
     if (!realUser()) { box.innerHTML = '<div class="nt-empty">Log in with an account to see who viewed and liked your content.</div>'; return; }
     const list = events.filter(e => filter === 'all' || e.type === filter);
-    if (!list.length) { box.innerHTML = '<div class="nt-empty">' + (loaded ? 'Nothing here yet. Views and likes on your posts, stories and Fulls will show up here.' : 'Notifications are not available right now.') + '</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="nt-empty">' + (loaded ? 'Nothing here yet. New followers, views and likes will show up here.' : 'Notifications are not available right now.') + '</div>'; return; }
     box.innerHTML = '';
     list.forEach(e => {
       const row = document.createElement('div'); row.className = 'nt-item' + (e.ts > lastSeen ? ' new' : '');
+      if (e.type === 'follow') {
+        row.innerHTML = avatarHtmlFor(e.user) + '<div class="nt-text"><b>' + esc(e.user.name) + '</b> started following you<div class="nt-time">' + ago(e.ts) + '</div></div><button class="nt-follow-btn">Follow back</button>';
+        const fb = row.querySelector('button');
+        fb.onclick = async ev => {
+          ev.stopPropagation(); fb.disabled = true; fb.textContent = '…';
+          try { await window.acceptFriendRequest(e.userId); } catch (err) {}
+          const ok = friendRequests.some(r => r.fromUserId === e.userId && r.toUserId === currentUser.id && r.status === 'accepted');
+          mergeFollow(); updateBadges(); render();
+          if (ok) showMsgBox('You and ' + e.user.name + ' are now friends! You can chat together.');
+        };
+        box.appendChild(row); return;
+      }
       const thumb = e.item ? (e.item.image || e.item.thumb) : null;
       row.innerHTML = avatarHtmlFor(e.user) +
         '<div class="nt-text"><b>' + esc(e.user.name) + '</b> ' + (e.type === 'like' ? '❤️ liked your ' : '👁 viewed your ') + WHAT[e.kind] +
@@ -6903,6 +6940,16 @@ async function downloadApk(ev) {
   }
   function startPolling() { stopPolling(); setTimeout(poll, 4000); timer = setInterval(poll, 60000); }
   function stopPolling() { if (timer) clearInterval(timer); timer = null; events = []; loaded = false; updateBadges(); }
+  const _lsn = window.loadSocial;                                  // friendships changed: refresh the follow notifications
+  window.loadSocial = async function () {
+    await _lsn.apply(this, arguments);
+    try {
+      if (!realUser()) return;
+      try { lastSeen = Number(localStorage.getItem(seenKey())) || 0; } catch (e) { lastSeen = 0; }
+      mergeFollow(); updateBadges();
+      const sc = document.getElementById('notifications-screen'); if (sc && sc.classList.contains('active')) render();
+    } catch (e) {}
+  };
   const _fl = window.finishLogin;
   window.finishLogin = async function (u) { const ok = await _fl(u); if (ok) startPolling(); return ok; };
   const _lo = window.logout;
@@ -7699,7 +7746,7 @@ window.addFullToStory = async function (id) {
     const n = currentUser.isGuest ? 0 : users.filter(u => {
       if (u.id === currentUser.id || blockedUsers.includes(u.name) || u.banned) return false;
       return friendRequests.some(r => r.status === 'accepted' && ((r.fromUserId === u.id && r.toUserId === currentUser.id) || (r.fromUserId === currentUser.id && r.toUserId === u.id))) || u.friendStatus === 'accepted';
-    }).length;
+    }).length + friendRequests.filter(r => r.toUserId === currentUser.id && r.status === 'pending' && users.some(u => u.id === r.fromUserId && !u.banned && !blockedUsers.includes(u.name))).length;
     el.innerHTML = '<b>' + n + '</b> followers';
   }
   const _r = window.renderProfileGrids;
