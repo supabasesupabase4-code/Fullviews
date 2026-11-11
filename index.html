@@ -7123,6 +7123,10 @@ window.addFullToStory = async function (id) {
 .fvx-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border,#e8e3f5);margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:.8rem}
 .fvx-check.on{background:var(--primary,#6d4aff);border-color:var(--primary,#6d4aff)}
 .msg-edited{font-size:.7rem;opacity:.7}
+.fvx-sw{width:46px;height:26px;border-radius:13px;background:var(--border,#e8e3f5);position:relative;flex-shrink:0;transition:.2s}
+.fvx-sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.fvx-sw.on{background:var(--primary,#6d4aff)}
+.fvx-sw.on::after{left:23px}
 #active-chat-messages .message{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}`;
   document.head.appendChild(st);
 
@@ -7164,7 +7168,11 @@ window.addFullToStory = async function (id) {
   async function loadGroups() {
     if (!realUser()) { groups = []; return; }
     const [g, m, gm] = await Promise.all([
-      sb.from('chat_groups').select('id,name,avatar_url'),
+      (async () => {
+        let r = await sb.from('chat_groups').select('id,name,avatar_url,description,only_admins_post,created_by');
+        if (r.error) r = await sb.from('chat_groups').select('id,name,avatar_url');
+        return r;
+      })(),
       sb.from('chat_group_members').select('group_id,user_id,role'),
       sb.from('group_messages').select('*').order('created_at', { ascending: false }).limit(1000)
     ]);
@@ -7173,7 +7181,7 @@ window.addFullToStory = async function (id) {
     groups = (g.data || []).map(r => {
       const mem = (m.data || []).filter(x => x.group_id === r.id).map(x => ({ id: x.user_id, role: x.role }));
       const mine = mem.find(x => x.id === me);
-      return { id: r.id, name: r.name, avatar: r.avatar_url || null, members: mem, role: mine ? mine.role : 'member' };
+      return { id: r.id, name: r.name, avatar: r.avatar_url || null, desc: r.description || '', onlyAdmins: !!r.only_admins_post, createdBy: r.created_by || null, members: mem, role: mine ? mine.role : 'member' };
     });
     Object.keys(messages).forEach(k => { if (isGroupKey(k)) delete messages[k]; });
     (gm.data || []).slice().reverse().forEach(r => { const k = GK(r.group_id); (messages[k] = messages[k] || []).push(mapG(r, byId)); });
@@ -7181,7 +7189,7 @@ window.addFullToStory = async function (id) {
     saveToLocalStorage();
     try {
       const cur = window.currentChatId;
-      if (cur && isGroupKey(cur)) { if (groups.some(x => GK(x.id) === cur)) renderChatMessages(cur); else renderChatList(); }
+      if (cur && isGroupKey(cur)) { if (groups.some(x => GK(x.id) === cur)) { renderChatMessages(cur); groupRoomUI(cur); } else renderChatList(); }
       else if (!cur && currentTabName === 'chats') renderChatList();
     } catch (e) {}
   }
@@ -7205,19 +7213,24 @@ window.addFullToStory = async function (id) {
     } catch (e) {}
     return r;
   };
+  const DOTS = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+  function groupRoomUI(key) {
+    const g = groups.find(x => GK(x.id) === key); if (!g) return;
+    const h = $('chat-header'); if (!h) return;
+    h.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;">' +
+      '<div style="display:flex;align-items:center;gap:10px;min-width:0;"><span style="cursor:pointer;color:var(--primary);font-size:.95rem;font-weight:600;flex-shrink:0;" onclick="renderChatList()">← Back</span>' +
+      '<span id="fvx-gtitle" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(g.name) + ' <span style="font-size:.75rem;color:var(--secondary-text);font-weight:400;">· ' + g.members.length + ' members</span></span></div>' +
+      '<button id="fvx-gmenu" aria-label="Group settings" style="background:none;border:none;padding:6px;cursor:pointer;color:var(--text);flex-shrink:0;display:flex;">' + DOTS + '</button></div>';
+    $('fvx-gtitle').onclick = () => openGroupSettings(g.id);
+    $('fvx-gmenu').onclick = () => openGroupSettings(g.id);
+    document.querySelectorAll('#chat-content .mic-btn').forEach(b => b.remove());      // no voice messages in groups
+    const inp = $('chat-input-text');
+    if (inp) { const locked = g.onlyAdmins && g.role !== 'admin'; inp.disabled = locked; inp.placeholder = locked ? 'Only admins can send messages' : 'Type a message...'; }
+  }
   const _ocr = window.openChatRoom;
   window.openChatRoom = function (targetId) {
     const r = _ocr.apply(this, arguments);
-    if (isGroupKey(targetId)) {
-      try {
-        const g = groups.find(x => GK(x.id) === targetId);
-        if (g) {
-          $('chat-header').innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="cursor:pointer;color:var(--primary);font-size:.95rem;font-weight:600;" onclick="renderChatList()">← Back</span><span id="fvx-gtitle" style="cursor:pointer;">' + esc(g.name) + ' <span style="font-size:.75rem;color:var(--secondary-text);font-weight:400;">· ' + g.members.length + ' members</span></span></div>';
-          $('fvx-gtitle').onclick = () => openGroupInfo(g.id);
-          document.querySelectorAll('#chat-content .mic-btn').forEach(b => b.remove());      // no voice messages in groups
-        }
-      } catch (e) {}
-    }
+    if (isGroupKey(targetId)) { try { groupRoomUI(targetId); } catch (e) {} }
     return r;
   };
   const _scm = window.sendChatMessage;
@@ -7227,7 +7240,8 @@ window.addFullToStory = async function (id) {
     const input = $('chat-input-text'), dd = $('chat-tag-dropdown'); if (dd) dd.classList.remove('active');
     const val = input ? input.value.trim() : ''; if (!val) return;
     if (val.length > 2000) { showMsgBox('Messages can have at most 2000 characters.'); return; }
-    const gid = gidOf(targetId); if (!groups.some(g => g.id === gid)) return;
+    const gid = gidOf(targetId), gr = groups.find(g => g.id === gid); if (!gr) return;
+    if (gr.onlyAdmins && gr.role !== 'admin') { toast('Only admins can send messages in this group'); return; }
     const local = { sender: currentUser.id, senderName: currentUser.name, text: val, ts: Date.now() };
     (messages[targetId] = messages[targetId] || []).push(local);
     input.value = ''; renderChatMessages(targetId);
@@ -7310,24 +7324,152 @@ window.addFullToStory = async function (id) {
     };
   };
 
-  /* ---------- group info + leave ---------- */
-  function openGroupInfo(gid) {
-    const g = groups.find(x => x.id === gid); if (!g) return;
-    const byId = byIdMap();
-    const rows = g.members.map(m => {
-      const u = m.id === currentUser.id ? currentUser : byId.get(m.id);
-      return '<div class="fvx-row" style="cursor:default">' + userAv(u) + '<div style="font-weight:600;">' + esc(u ? u.name : 'Unknown') + (m.id === currentUser.id ? ' (you)' : '') + '</div>' +
-        (m.role === 'admin' ? '<span style="margin-left:auto;font-size:.72rem;color:var(--primary);font-weight:700;">Admin</span>' : '') + '</div>';
+  /* ---------- group settings (the 3 dots) ---------- */
+  function rpcErr(e, msg) { console.error(msg, e); toast(msg); }
+  async function afterChange(gid) { await loadGroups(); if (groups.some(x => x.id === gid)) openGroupSettings(gid); else closeSheet(); }
+  function armBtn(id, fn) {
+    const b = $(id); if (!b) return;
+    let armed = false; const orig = b.innerHTML;
+    b.onclick = async () => {
+      if (!armed) { armed = true; b.textContent = 'Tap again to confirm'; setTimeout(() => { if (b.isConnected && armed) { armed = false; b.innerHTML = orig; } }, 4000); return; }
+      await fn();
+    };
+  }
+  function dropGroup(gid) { closeSheet(); groups = groups.filter(x => x.id !== gid); delete messages[GK(gid)]; saveToLocalStorage(); renderChatList(); }
+  function openGroupSettings(gid) {
+    const g = groups.find(x => x.id === gid); if (!g) { closeSheet(); return; }
+    const me = currentUser.id, byId = byIdMap(), isAdmin = g.role === 'admin', isCreator = g.createdBy === me;
+    const members = g.members.slice().sort((a, b) => (b.role === 'admin') - (a.role === 'admin'));
+    const rows = members.map(m => {
+      const u = m.id === me ? currentUser : byId.get(m.id), canAct = isAdmin && m.id !== me;
+      return '<div class="fvx-row" data-uid="' + esc(m.id) + '"' + (canAct ? '' : ' style="cursor:default"') + '>' + userAv(u) +
+        '<div style="font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;">' + esc(u ? u.name : 'Unknown') + (m.id === me ? ' (you)' : '') + '</div>' +
+        (m.role === 'admin' ? '<span style="margin-left:auto;font-size:.72rem;color:var(--primary);font-weight:700;">Admin</span>' : '') +
+        (canAct ? '<span style="' + (m.role === 'admin' ? '' : 'margin-left:auto;') + 'color:var(--secondary-text);display:flex;">' + DOTS + '</span>' : '') + '</div>';
     }).join('');
-    sheet('<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;">' + grpAv(g, 76) +
-      '<div style="font-weight:700;font-size:1.1rem;">' + esc(g.name) + '</div><div style="font-size:.82rem;color:var(--secondary-text);">' + g.members.length + ' members</div></div>' + rows +
-      '<button class="fvx-btn" id="fvx-leave" style="width:100%;margin-top:14px;background:#e0245e;">Leave group</button>');
-    let armed = false;
-    $('fvx-leave').onclick = async () => {
-      if (!armed) { armed = true; $('fvx-leave').textContent = 'Tap again to leave'; return; }
-      const { error } = await sb.rpc('leave_group', { p_group: gid });
-      if (error) { toast('Could not leave the group'); return; }
-      closeSheet(); groups = groups.filter(x => x.id !== gid); delete messages[GK(gid)]; saveToLocalStorage(); renderChatList();
+    const el = sheet(
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:12px;text-align:center;">' + grpAv(g, 76) +
+      '<div style="font-weight:700;font-size:1.1rem;">' + esc(g.name) + '</div>' +
+      (g.desc ? '<div style="font-size:.88rem;color:var(--secondary-text);white-space:pre-wrap;">' + esc(g.desc) + '</div>' : '') +
+      '<div style="font-size:.82rem;color:var(--secondary-text);">Group · ' + g.members.length + ' members</div></div>' +
+      (isAdmin ? '<button class="fvx-act" id="fvx-s-edit">✏ Edit group info</button>' +
+        '<button class="fvx-act" id="fvx-s-add">➕ Add members</button>' +
+        '<div class="fvx-act" id="fvx-s-only" style="cursor:pointer;justify-content:space-between;"><span>Only admins can send messages</span><span class="fvx-sw' + (g.onlyAdmins ? ' on' : '') + '"></span></div>' : '') +
+      '<div style="font-weight:700;margin:14px 0 4px;">Members (' + g.members.length + ')</div>' + rows +
+      '<button class="fvx-act danger" id="fvx-s-leave" style="margin-top:8px;">🚪 Leave group</button>' +
+      (isCreator ? '<button class="fvx-act danger" id="fvx-s-delete">🗑 Delete group</button>' : ''));
+    const on = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
+    on('fvx-s-edit', () => openEditGroup(g));
+    on('fvx-s-add', () => openAddMembers(g));
+    on('fvx-s-only', async () => {
+      const { error } = await sb.rpc('update_group', { p_group: g.id, p_only_admins: !g.onlyAdmins });
+      if (error) return rpcErr(error, 'Could not change this setting');
+      afterChange(g.id);
+    });
+    el.querySelectorAll('[data-uid]').forEach(row => {
+      const uid = row.getAttribute('data-uid'), m = g.members.find(x => x.id === uid);
+      if (isAdmin && m && uid !== me) row.onclick = () => openMemberActions(g, m);
+    });
+    armBtn('fvx-s-leave', async () => {
+      const { error } = await sb.rpc('leave_group', { p_group: g.id });
+      if (error) return rpcErr(error, 'Could not leave the group');
+      dropGroup(g.id);
+    });
+    armBtn('fvx-s-delete', async () => {
+      const { error } = await sb.rpc('delete_group', { p_group: g.id });
+      if (error) return rpcErr(error, 'Could not delete the group');
+      dropGroup(g.id);
+    });
+  }
+  function openMemberActions(g, m) {
+    const u = byIdMap().get(m.id), name = u ? u.name : 'Unknown', isCreatorTarget = g.createdBy === m.id;
+    sheet('<div class="fvx-title">' + esc(name) + '</div>' +
+      (m.role === 'admin'
+        ? (isCreatorTarget ? '<div class="fvx-prev" style="white-space:normal;">The creator of the group always stays admin.</div>' : '<button class="fvx-act" id="fvx-m-role">Dismiss as admin</button>')
+        : '<button class="fvx-act" id="fvx-m-role">Make group admin</button><button class="fvx-act danger" id="fvx-m-remove">Remove from group</button>') +
+      '<button class="fvx-act" id="fvx-m-back">Back</button>');
+    $('fvx-m-back').onclick = () => openGroupSettings(g.id);
+    const role = $('fvx-m-role');
+    if (role) role.onclick = async () => {
+      const { error } = await sb.rpc('set_group_admin', { p_group: g.id, p_user: m.id, p_admin: m.role !== 'admin' });
+      if (error) return rpcErr(error, 'Could not change this role');
+      afterChange(g.id);
+    };
+    armBtn('fvx-m-remove', async () => {
+      const { error } = await sb.rpc('remove_group_member', { p_group: g.id, p_user: m.id });
+      if (error) return rpcErr(error, 'Could not remove this member');
+      afterChange(g.id);
+    });
+  }
+  function openAddMembers(g) {
+    const inGroup = new Set(g.members.map(m => m.id)), list = friends().filter(u => !inGroup.has(u.id)), room = 50 - g.members.length;
+    if (room <= 0) { toast('This group is full (50 people)'); return; }
+    if (!list.length) { toast('All your friends are already in this group'); return; }
+    const sel = new Set();
+    sheet('<div class="fvx-title">Add members</div><input id="fvx-as" class="fvx-input" placeholder="Search friends" style="margin-bottom:6px"><div id="fvx-al"></div>' +
+      '<div style="display:flex;gap:8px;margin-top:14px;"><button class="fvx-btn sec" id="fvx-ab" style="flex:1">Back</button><button class="fvx-btn" id="fvx-ay" style="flex:1">Add</button></div>');
+    const draw = () => {
+      const q = $('fvx-as').value.trim().toLowerCase(), box = $('fvx-al'); box.innerHTML = '';
+      list.filter(u => u.name.toLowerCase().includes(q)).forEach(u => {
+        const row = document.createElement('div'); row.className = 'fvx-row';
+        row.innerHTML = userAv(u) + '<div style="font-weight:600;">' + esc(u.name) + '</div><div class="fvx-check' + (sel.has(u.id) ? ' on' : '') + '">' + (sel.has(u.id) ? '✓' : '') + '</div>';
+        row.onclick = () => { if (sel.has(u.id)) sel.delete(u.id); else if (sel.size < room) sel.add(u.id); else toast('This group can have up to 50 people'); draw(); };
+        box.appendChild(row);
+      });
+    };
+    draw(); $('fvx-as').oninput = draw;
+    $('fvx-ab').onclick = () => openGroupSettings(g.id);
+    $('fvx-ay').onclick = async () => {
+      if (!sel.size) { toast('Pick at least one friend'); return; }
+      const { error } = await sb.rpc('add_group_members', { p_group: g.id, p_members: Array.from(sel) });
+      if (error) return rpcErr(error, 'Could not add these members');
+      afterChange(g.id);
+    };
+  }
+  function openEditGroup(g) {
+    let avatarData = null, remove = false;
+    sheet('<div class="fvx-title">Edit group info</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;"><div id="fvx-eav" class="fvx-av" style="width:76px;height:76px;cursor:pointer;font-size:1.8rem;"></div>' +
+      '<div style="display:flex;gap:14px;font-size:.82rem;"><span id="fvx-echange" style="color:var(--primary);font-weight:600;cursor:pointer;">Change photo</span>' + (g.avatar ? '<span id="fvx-eremove" style="color:#e0245e;font-weight:600;cursor:pointer;">Remove photo</span>' : '') + '</div>' +
+      '<input type="file" id="fvx-efile" accept="image/jpeg,image/png,image/webp" style="display:none"></div>' +
+      '<input id="fvx-ename" class="fvx-input" maxlength="40" placeholder="Group name">' +
+      '<textarea id="fvx-edesc" class="fvx-input" rows="3" maxlength="200" placeholder="Group description (optional)" style="margin-top:8px;resize:none;"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:14px;"><button class="fvx-btn sec" id="fvx-ecancel" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-esave" style="flex:1">Save</button></div>');
+    const av = $('fvx-eav');
+    const showAv = () => {
+      if (avatarData) { av.textContent = ''; av.style.backgroundImage = 'url(' + avatarData + ')'; }
+      else if (g.avatar && !remove) { av.textContent = ''; av.style.backgroundImage = 'url("' + g.avatar.replace(/"/g, '%22') + '")'; }
+      else { av.style.backgroundImage = 'linear-gradient(135deg,#7a4dff,#ff3d8b)'; av.textContent = (g.name || 'G')[0]; }
+    };
+    showAv();
+    $('fvx-ename').value = g.name; $('fvx-edesc').value = g.desc || '';
+    const pick = () => $('fvx-efile').click();
+    av.onclick = pick; $('fvx-echange').onclick = pick;
+    const rm = $('fvx-eremove'); if (rm) rm.onclick = () => { remove = true; avatarData = null; showAv(); rm.remove(); };
+    $('fvx-efile').onchange = async e => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      if (!/^image\/(jpeg|png|webp)$/.test(f.type) || !/\.(jpe?g|png|webp)$/i.test(f.name) || f.size > 5 * 1024 * 1024) { toast('Choose a JPG, PNG or WebP image under 5 MB'); return; }
+      try { avatarData = await resizeImage(f, 256); remove = false; showAv(); } catch (err) { toast('This image cannot be used'); }
+    };
+    $('fvx-ecancel').onclick = () => openGroupSettings(g.id);
+    $('fvx-esave').onclick = async () => {
+      const name = $('fvx-ename').value.trim(), desc = $('fvx-edesc').value.trim(), btn = $('fvx-esave');
+      if (!name) { toast('Enter a group name'); return; }
+      btn.disabled = true; btn.textContent = 'Saving…';
+      let path = null, url = null;
+      try {
+        if (avatarData) {
+          path = currentUser.id + '/groups/' + (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)) + '.jpg';
+          url = await uploadDataUrl('media', path, avatarData);
+        }
+        const { error } = await sb.rpc('update_group', { p_group: g.id, p_name: name, p_description: desc, p_avatar_url: url, p_avatar_path: path, p_remove_avatar: remove && !avatarData });
+        if (error) throw error;
+        afterChange(g.id);
+      } catch (err) {
+        console.error('update_group failed', err);
+        if (path) sb.storage.from('media').remove([path]);
+        btn.disabled = false; btn.textContent = 'Save'; toast('Could not save the changes. Please try again.');
+      }
     };
   }
 
@@ -7478,6 +7620,8 @@ window.addFullToStory = async function (id) {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_messages' }, p => applyEdit(p.new, true))
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'group_messages' }, p => applyDelete(p.old && p.old.id, true))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_groups' }, refresh)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_groups' }, refresh)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_group_members' }, refresh)
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_group_members' }, refresh)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, p => applyEdit(p.new, false))
