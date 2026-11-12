@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>window.__fvRecovery = /[#&]type=recovery/.test(location.hash);</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>fullview – share photos, Fulls and stories</title>
@@ -1171,6 +1172,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 <input type="password" id="reg-password" class="input-field" maxlength="100" placeholder="Password (min. 6 characters)">
             </div>
 
+            <div style="text-align:right;width:100%;max-width:320px;margin:-4px 0 10px;"><a style="font-size:.82rem;color:var(--primary);font-weight:600;cursor:pointer;" onclick="openForgotPassword()">Forgot password?</a></div>
             <label class="auth-consent"><input type="checkbox" id="reg-consent"><span>I am at least 13 years old and I accept the <a onclick="openLegal('terms')">Terms of Use</a> and the <a onclick="openLegal('privacy')">Privacy Policy</a>.</span></label>
             <button class="btn" onclick="completeRegistration()">Start fullview</button>
             <a id="apk-btn" class="btn apk-btn" href="Fullviews.apk" download="Fullviews.apk" onclick="return downloadApk(event)">
@@ -1367,6 +1369,13 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     <div class="drawer-item-left">
                         <span class="drawer-item-icon">👁</span>
                         <span style="font-weight: 600;">Views</span>
+                    </div>
+                    <span style="color:var(--secondary-text);">&gt;</span>
+                </div>
+                <div class="drawer-item" onclick="openChangePassword()">
+                    <div class="drawer-item-left">
+                        <span class="drawer-item-icon">🔒</span>
+                        <span style="font-weight: 600;">Change password</span>
                     </div>
                     <span style="color:var(--secondary-text);">&gt;</span>
                 </div>
@@ -7753,6 +7762,144 @@ window.addFullToStory = async function (id) {
   window.renderProfileGrids = function () { const r = _r.apply(this, arguments); try { upd(); } catch (e) {} return r; };
   const _ls = window.loadSocial;
   window.loadSocial = async function () { await _ls.apply(this, arguments); try { upd(); } catch (e) {} };
+})();
+</script>
+<script>
+/* ===== Change password (profile sidebar) ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const AKEY = 'fullview_pw_attempts', WINDOW = 15 * 60 * 1000, MAX = 5;      // 5 wrong tries every 15 minutes
+  const attempts = () => { try { return JSON.parse(localStorage.getItem(AKEY) || '[]').filter(t => Date.now() - t < WINDOW); } catch (e) { return []; } };
+  const addAttempt = () => { const a = attempts(); a.push(Date.now()); try { localStorage.setItem(AKEY, JSON.stringify(a)); } catch (e) {} };
+  const close = () => { const o = $('fvx-pw'); if (o) o.remove(); };
+  const say = (t, ok) => { const m = $('fvx-pw-msg'); if (m) { m.textContent = t; m.style.color = ok ? '#22a05a' : '#e0245e'; } };
+  const problem = p => p.length < 8 ? 'The new password must have at least 8 characters.'
+    : p.length > 72 ? 'The password is too long (72 characters at most).'
+    : !/[A-Z]/.test(p) ? 'Add at least one capital letter.'
+    : !/[0-9]/.test(p) ? 'Add at least one number.' : '';
+  window.openChangePassword = function () {
+    try { closeProfileDrawer(); } catch (e) {}
+    if (!realUser()) { showMsgBox('Log in with an account to change your password.'); return; }
+    close();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = 'fvx-pw';
+    ov.innerHTML = '<div class="fvx-sheet"><div class="fvx-handle"></div><div class="fvx-title">Change password</div>' +
+      '<input id="fvx-pw-cur" type="password" class="fvx-input" autocomplete="current-password" placeholder="Current password" maxlength="72">' +
+      '<input id="fvx-pw-new" type="password" class="fvx-input" autocomplete="new-password" placeholder="New password" maxlength="72" style="margin-top:8px;">' +
+      '<input id="fvx-pw-cf" type="password" class="fvx-input" autocomplete="new-password" placeholder="Confirm new password" maxlength="72" style="margin-top:8px;">' +
+      '<div style="font-size:.78rem;color:var(--secondary-text);margin-top:8px;">At least 8 characters, with one capital letter and one number.</div>' +
+      '<div id="fvx-pw-msg" style="font-size:.85rem;min-height:1.2em;margin-top:8px;font-weight:600;"></div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;"><button class="fvx-btn sec" id="fvx-pw-cancel" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-pw-save" style="flex:1">Save</button></div></div>';
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    document.body.appendChild(ov);
+    $('fvx-pw-cancel').onclick = close;
+    $('fvx-pw-save').onclick = async () => {
+      const cur = $('fvx-pw-cur').value, nw = $('fvx-pw-new').value, cf = $('fvx-pw-cf').value, btn = $('fvx-pw-save');
+      if (!cur) return say('Enter your current password.');
+      const bad = problem(nw); if (bad) return say(bad);
+      if (nw !== cf) return say('The two new passwords do not match.');
+      if (nw === cur) return say('Choose a password different from the current one.');
+      if (attempts().length >= MAX) return say('Too many attempts. Please wait 15 minutes and try again.');
+      btn.disabled = true; btn.textContent = 'Saving…'; say('');
+      try {
+        const chk = await sb.auth.signInWithPassword({ email: currentUser.email, password: cur });
+        if (chk.error) { addAttempt(); btn.disabled = false; btn.textContent = 'Save'; return say('Your current password is incorrect.'); }
+        const up = await sb.auth.updateUser({ password: nw });
+        if (up.error) throw up.error;
+        try { await sb.auth.signOut({ scope: 'others' }); } catch (e) {}            // other phones must log in again
+        close(); showMsgBox('Your password was changed. Your other devices were logged out.');
+      } catch (err) {
+        console.error('change password failed', err);
+        btn.disabled = false; btn.textContent = 'Save'; say('Could not change the password. Please try again.');
+      }
+    };
+  };
+})();
+</script>
+<script>
+/* ===== Forgot password: an email link lets the person choose a new password ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const SKEY = 'fullview_reset_sends';
+  const sends = () => { try { return JSON.parse(localStorage.getItem(SKEY) || '[]').filter(t => Date.now() - t < 3600000); } catch (e) { return []; } };
+  const addSend = () => { const a = sends(); a.push(Date.now()); try { localStorage.setItem(SKEY, JSON.stringify(a)); } catch (e) {} };
+  const problem = p => p.length < 8 ? 'The new password must have at least 8 characters.'
+    : p.length > 72 ? 'The password is too long (72 characters at most).'
+    : !/[A-Z]/.test(p) ? 'Add at least one capital letter.'
+    : !/[0-9]/.test(p) ? 'Add at least one number.' : '';
+  const closeAll = () => { ['fvx-fp', 'fvx-rec'].forEach(id => { const o = $(id); if (o) o.remove(); }); };
+  const say = (id, t, ok) => { const m = $(id); if (m) { m.textContent = t; m.style.color = ok ? '#22a05a' : '#e0245e'; } };
+  function overlay(id, html, dismissable) {
+    closeAll();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = id;
+    ov.innerHTML = '<div class="fvx-sheet"><div class="fvx-handle"></div>' + html + '</div>';
+    if (dismissable) ov.addEventListener('click', e => { if (e.target === ov) closeAll(); });
+    document.body.appendChild(ov);
+    return ov;
+  }
+
+  /* 1. ask for the link */
+  window.openForgotPassword = function () {
+    const prefill = ($('reg-email') && $('reg-email').value || '').trim();
+    overlay('fvx-fp', '<div class="fvx-title">Forgot your password?</div>' +
+      '<div style="text-align:center;color:var(--secondary-text);font-size:.9rem;margin:0 0 12px;">Enter your email. We will send you a link to choose a new password.</div>' +
+      '<input id="fvx-fp-email" type="email" class="fvx-input" autocomplete="email" placeholder="Your email" maxlength="100">' +
+      '<div id="fvx-fp-msg" style="font-size:.85rem;min-height:1.2em;margin-top:8px;font-weight:600;"></div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;"><button class="fvx-btn sec" id="fvx-fp-cancel" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-fp-send" style="flex:1">Send link</button></div>', true);
+    $('fvx-fp-email').value = prefill;
+    $('fvx-fp-cancel').onclick = closeAll;
+    $('fvx-fp-send').onclick = async () => {
+      const email = $('fvx-fp-email').value.trim().toLowerCase(), btn = $('fvx-fp-send');
+      if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(email)) return say('fvx-fp-msg', 'Enter a valid email address.');
+      const a = sends();
+      if (a.length && Date.now() - a[a.length - 1] < 60000) return say('fvx-fp-msg', 'Please wait a minute before asking again.');
+      if (a.length >= 3) return say('fvx-fp-msg', 'Too many requests. Please try again in an hour.');
+      if (!sb) return say('fvx-fp-msg', 'This is not available right now.');
+      btn.disabled = true; btn.textContent = 'Sending…'; say('fvx-fp-msg', '');
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      addSend(); btn.disabled = false; btn.textContent = 'Send link';
+      if (error) { console.error('reset email failed', error); return say('fvx-fp-msg', 'Could not send the email. Please try again later.'); }
+      // same answer whether or not an account exists, so nobody can find out who has an account
+      say('fvx-fp-msg', 'If an account exists for this email, a link was sent. Check your inbox and your spam folder.', true);
+    };
+  };
+
+  /* 2. back from the email link: choose the new password */
+  function showRecovery() {
+    if ($('fvx-rec')) return;
+    overlay('fvx-rec', '<div class="fvx-title">Choose a new password</div>' +
+      '<input id="fvx-rec-new" type="password" class="fvx-input" autocomplete="new-password" placeholder="New password" maxlength="72">' +
+      '<input id="fvx-rec-cf" type="password" class="fvx-input" autocomplete="new-password" placeholder="Confirm new password" maxlength="72" style="margin-top:8px;">' +
+      '<div style="font-size:.78rem;color:var(--secondary-text);margin-top:8px;">At least 8 characters, with one capital letter and one number.</div>' +
+      '<div id="fvx-rec-msg" style="font-size:.85rem;min-height:1.2em;margin-top:8px;font-weight:600;"></div>' +
+      '<button class="fvx-btn" id="fvx-rec-save" style="width:100%;margin-top:10px;">Save new password</button>', false);
+    $('fvx-rec-save').onclick = async () => {
+      const nw = $('fvx-rec-new').value, cf = $('fvx-rec-cf').value, btn = $('fvx-rec-save');
+      const bad = problem(nw); if (bad) return say('fvx-rec-msg', bad);
+      if (nw !== cf) return say('fvx-rec-msg', 'The two passwords do not match.');
+      btn.disabled = true; btn.textContent = 'Saving…'; say('fvx-rec-msg', '');
+      try {
+        const up = await sb.auth.updateUser({ password: nw });
+        if (up.error) throw up.error;
+        try { await sb.auth.signOut({ scope: 'others' }); } catch (e) {}          // old sessions on other phones end
+        try { history.replaceState(null, '', location.pathname); } catch (e) {}
+        closeAll(); showMsgBox('Your password was changed. You are logged in.');
+      } catch (err) {
+        console.error('recovery update failed', err);
+        btn.disabled = false; btn.textContent = 'Save new password';
+        say('fvx-rec-msg', 'Could not change the password. The link may have expired: ask for a new one.');
+      }
+    };
+  }
+  if (sb) {
+    sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') showRecovery(); });
+    if (window.__fvRecovery) (async () => {
+      for (let i = 0; i < 25; i++) {
+        const { data } = await sb.auth.getSession();
+        if (data && data.session) { showRecovery(); return; }
+        await new Promise(r => setTimeout(r, 300));
+      }
+    })();
+  }
 })();
 </script>
 <script>
