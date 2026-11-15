@@ -1073,7 +1073,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 .sp-top{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.45);color:#fff;font-size:.7rem;font-weight:700;padding:4px 9px;border-radius:999px;backdrop-filter:blur(6px)}
 .sp-bot{position:absolute;left:10px;right:10px;bottom:10px;color:#fff;display:flex;flex-direction:column;gap:2px}
 .sp-bot b{font-size:.92rem}.sp-bot span{font-size:.72rem;opacity:.9}
-.hh-card{margin:12px 12px 6px;padding:16px;border-radius:26px;background:linear-gradient(135deg,#fff 0%,#f5efff 60%,#ffeaf1 100%);border:1px solid var(--border);box-shadow:var(--shadow)}
+.hh-card{margin:26px 12px 6px;padding:16px;border-radius:26px;background:linear-gradient(135deg,#fff 0%,#f5efff 60%,#ffeaf1 100%);border:1px solid var(--border);box-shadow:var(--shadow)}
 .hh-row{display:flex;align-items:center;gap:12px}
 .hh-row .avatar{width:48px;height:48px;font-size:1.2rem;box-shadow:0 0 0 3px #fff,0 0 0 5px #ff3d8b;object-fit:cover}
 .hh-txt small{display:block;color:var(--secondary-text);font-size:.78rem;font-weight:600}
@@ -1128,6 +1128,13 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
 .nt-empty{text-align:center;color:var(--secondary-text);padding:40px 20px;font-size:.9rem}
 .nt-follow-btn{border:none;border-radius:14px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;background:var(--grad);color:#fff;flex-shrink:0;font-family:inherit}
 .nt-follow-btn:disabled{opacity:.6}
+#search-screen .hdr-tabs{display:none}
+#search-screen .header.home-top{padding:8px 12px}
+.ht-btn{position:relative;width:44px;height:44px;border:0;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0}
+.ht-btn:active{background:rgba(109,74,255,.1)}
+.ht-btn svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.ht-btn .nbadge{top:4px;right:4px}
+#search-screen .stories-container{border-bottom:0;padding-top:10px;padding-bottom:16px}
 </style>
 </head>
 <body>
@@ -1194,8 +1201,10 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
         </div>
 
         <div id="search-screen" class="screen">
-            <div class="header">
+            <div class="header home-top">
+                <button class="ht-btn" onclick="openModal('minim-modal')" title="New Full" aria-label="New Full"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
                 <span class="brand"><svg class="fv-mark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="url(#fvg)"/><circle cx="24" cy="24" r="11" fill="none" stroke="#fff" stroke-width="4"/><circle cx="24" cy="24" r="4" fill="#fff"/></svg>fullview</span>
+                <button class="ht-btn" onclick="headerTab('notifications')" title="Notifications" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg><span class="nbadge" id="home-heart-badge"></span></button>
                 <nav class="hdr-tabs" aria-label="Main sections">
                     <button class="hdr-tab active" data-tab="search" onclick="headerTab('search')" title="Home"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
                     <button class="hdr-tab" data-tab="profile" onclick="headerTab('profile')" title="Profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4-6 8-6s7 1.8 8 6"/></svg>Profile</button>
@@ -1207,9 +1216,9 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                 </nav>
             </div>
             <div id="guest-bar">👤 Invitant mode — nothing you do is saved</div>
+            <div class="stories-container" id="stories-row"></div>
             <div id="home-hero"></div>
             <div id="fulls-home-wrap"></div>
-            <div class="stories-container" id="stories-row"></div>
             <div class="feed-filters" id="feed-filters"></div>
             <div class="feed-container" id="feed-posts"></div>
         </div>
@@ -6892,7 +6901,7 @@ async function downloadApk(ev) {
   function unreadCount() { return events.filter(e => e.ts > lastSeen).length; }
   function updateBadges() {
     const n = unreadCount(), t = n > 99 ? '99+' : String(n);
-    ['nav-notif-badge', 'hdr-notif-badge'].forEach(id => { const b = document.getElementById(id); if (b) { b.textContent = t; b.style.display = n ? 'block' : 'none'; } });
+    ['nav-notif-badge', 'hdr-notif-badge', 'home-heart-badge'].forEach(id => { const b = document.getElementById(id); if (b) { b.textContent = t; b.style.display = n ? 'block' : 'none'; } });
   }
   function ago(ts) {
     const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
@@ -7899,6 +7908,195 @@ window.addFullToStory = async function (id) {
         await new Promise(r => setTimeout(r, 300));
       }
     })();
+  }
+})();
+</script>
+<script>
+/* ===== Private chat settings (the 3 dots, like WhatsApp) ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const DOTS = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+  const ic = d => '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">' + d + '</svg>';
+  const ICON = {
+    search: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+    bell: ic('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'),
+    bellOff: ic('<path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>'),
+    image: ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
+    eraser: ic('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>'),
+    ban: ic('<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>')
+  };
+  const st = document.createElement('style');
+  st.textContent = '@keyframes fvxflash{0%,60%{background:#fff3b0}100%{background:transparent}}.fvx-flash{animation:fvxflash 1.8s;border-radius:14px}' +
+    '.fvx-wp{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;color:var(--secondary-text);cursor:pointer}' +
+    '.fvx-wp i{display:block;width:62px;height:62px;border-radius:16px;border:2px solid var(--border)}.fvx-wp.on i{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)}';
+  document.head.appendChild(st);
+
+  /* ---------- helpers (this script is self-contained) ---------- */
+  const closeSheet = () => { const o = $('fvx-dm'); if (o) o.remove(); };
+  function sheet(html) {
+    closeSheet();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = 'fvx-dm';
+    ov.innerHTML = '<div class="fvx-sheet"><div class="fvx-handle"></div>' + html + '</div>';
+    ov.addEventListener('click', e => { if (e.target === ov) closeSheet(); });
+    document.body.appendChild(ov);
+    return ov.firstChild;
+  }
+  function toast(t) { const d = document.createElement('div'); d.className = 'fvx-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
+  const userOf = id => users.find(x => String(x.id) === String(id));
+  const isDirect = k => k != null && k !== 'global-chat' && k !== 'full-ai' && String(k).indexOf('grp:') !== 0 && !!userOf(k);
+  const uav = u => u && u.avatarImage ? '<img class="fvx-av" style="width:76px;height:76px;" src="' + esc(u.avatarImage) + '" alt="">'
+    : '<div class="fvx-av" style="width:76px;height:76px;font-size:1.8rem;background:' + esc((u && u.avatarColor) || '#7a4dff') + '">' + esc(((u && u.name) || '?')[0]) + '</div>';
+  const wpKey = k => 'fullview_wp_' + currentUser.id + '_' + k;
+  const clearKey = k => 'fullview_clear_' + currentUser.id + '_' + k;
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+
+  /* ---------- the 3 dots in a private chat ---------- */
+  function directRoomUI(uid) {
+    const h = $('chat-header'); if (!h || !userOf(uid)) return;
+    const btn = document.createElement('button');
+    btn.id = 'fvx-dmenu'; btn.setAttribute('aria-label', 'Chat settings'); btn.innerHTML = DOTS;
+    btn.style.cssText = 'background:none;border:none;padding:6px;cursor:pointer;color:var(--text);flex-shrink:0;display:flex;';
+    btn.onclick = () => openChatSettings(uid);
+    h.appendChild(btn);
+    const first = h.firstElementChild, nm = first && first.querySelectorAll('span')[1];
+    if (nm) { nm.style.cursor = 'pointer'; nm.onclick = () => openChatSettings(uid); }
+    applyWallpaper(uid);
+  }
+  function applyWallpaper(uid) { const box = $('active-chat-messages'); if (box) box.style.background = ls.get(wpKey(uid)) || ''; }
+  const _ocr = window.openChatRoom;
+  window.openChatRoom = function (targetId) {
+    const r = _ocr.apply(this, arguments);
+    try { if (isDirect(targetId)) directRoomUI(targetId); } catch (e) {}
+    return r;
+  };
+
+  /* ---------- settings sheet ---------- */
+  function openChatSettings(uid) {
+    const u = userOf(uid); if (!u) return;
+    const el = sheet('<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:10px;text-align:center;">' + uav(u) +
+      '<div style="font-weight:700;font-size:1.1rem;">' + esc(u.name) + (typeof vBadge === 'function' ? vBadge(u.name) : '') + '</div>' +
+      '<div style="font-size:.82rem;color:var(--secondary-text);">Private chat</div></div>' +
+      '<button class="fvx-act" id="fvx-c-search">' + ICON.search + ' Search in chat</button>' +
+      '<button class="fvx-act" id="fvx-c-mute">' + ICON.bell + ' <span>Mute notifications</span></button>' +
+      '<button class="fvx-act" id="fvx-c-wall">' + ICON.image + ' Wallpaper</button>' +
+      '<button class="fvx-act" id="fvx-c-clear">' + ICON.eraser + ' Clear chat</button>' +
+      '<button class="fvx-act danger" id="fvx-c-block">' + ICON.ban + ' Block ' + esc(u.name) + '</button>');
+    $('fvx-c-search').onclick = () => searchFlow(uid);
+    $('fvx-c-wall').onclick = () => wallpaperFlow(uid);
+    armed('fvx-c-clear', () => { clearChat(uid); });
+    armed('fvx-c-block', () => blockUser(u));
+    muteSetup(uid);
+  }
+  function armed(id, fn) {
+    const b = $(id); if (!b) return; let a = false; const orig = b.innerHTML;
+    b.onclick = async () => {
+      if (!a) { a = true; b.textContent = 'Tap again to confirm'; setTimeout(() => { if (b.isConnected && a) { a = false; b.innerHTML = orig; } }, 4000); return; }
+      await fn();
+    };
+  }
+
+  /* search inside the conversation */
+  function searchFlow(uid) {
+    sheet('<div class="fvx-title">Search in chat</div><input id="fvx-s-q" class="fvx-input" placeholder="Type a word" maxlength="60" autocomplete="off"><div id="fvx-s-res" style="margin-top:8px;"></div>' +
+      '<button class="fvx-btn sec" id="fvx-s-back" style="width:100%;margin-top:12px;">Back</button>');
+    const draw = () => {
+      const q = $('fvx-s-q').value.trim().toLowerCase(), box = $('fvx-s-res'); box.innerHTML = '';
+      if (q.length < 1) return;
+      const hits = (messages[uid] || []).filter(m => !m.audio && String(m.text || '').toLowerCase().includes(q)).slice(-50).reverse();
+      if (!hits.length) { box.innerHTML = '<div style="text-align:center;color:var(--secondary-text);padding:14px;">No messages found.</div>'; return; }
+      hits.forEach(m => {
+        const row = document.createElement('div'); row.className = 'fvx-row';
+        const when = m.ts ? new Date(m.ts).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+        row.innerHTML = '<div style="min-width:0;"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(String(m.text)) + '</div><div style="font-size:.72rem;color:var(--secondary-text);">' + esc((m.sender === currentUser.id ? 'You' : (m.senderName || (userOf(uid) || {}).name || '')) + (when ? ' · ' + when : '')) + '</div></div>';
+        row.onclick = () => {
+          closeSheet();
+          const target = Array.from(document.querySelectorAll('#active-chat-messages > *')).find(d => d._msg === m);
+          if (target) { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); target.classList.remove('fvx-flash'); void target.offsetWidth; target.classList.add('fvx-flash'); }
+        };
+        box.appendChild(row);
+      });
+    };
+    $('fvx-s-q').oninput = draw; $('fvx-s-q').focus();
+    $('fvx-s-back').onclick = () => openChatSettings(uid);
+  }
+
+  /* wallpaper (only on this phone) */
+  const WALLS = [['Default', ''], ['Sage', '#e3efdd'], ['Sand', '#f4ebd8'], ['Sky', '#dfeefa'], ['Rose', '#fbe3ea'], ['Lavender', '#ebe5fb'],
+    ['Sunset', 'linear-gradient(135deg,#ffe3d1,#ffd1e8,#d9d1ff)'], ['Mint', 'linear-gradient(135deg,#d1f0ff,#d9ffe8)']];
+  function wallpaperFlow(uid) {
+    const cur = ls.get(wpKey(uid)) || '';
+    sheet('<div class="fvx-title">Wallpaper</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;">' +
+      WALLS.map((w, i) => '<div class="fvx-wp' + (w[1] === cur ? ' on' : '') + '" data-i="' + i + '"><i style="background:' + (w[1] || '#fff') + '"></i>' + w[0] + '</div>').join('') + '</div>' +
+      '<div style="font-size:.76rem;color:var(--secondary-text);text-align:center;margin:8px 0;">Only you see this wallpaper, on this phone.</div>' +
+      '<button class="fvx-btn sec" id="fvx-w-back" style="width:100%;">Back</button>');
+    document.querySelectorAll('#fvx-dm .fvx-wp').forEach(el => el.onclick = () => {
+      const v = WALLS[Number(el.dataset.i)][1];
+      if (v) ls.set(wpKey(uid), v); else ls.del(wpKey(uid));
+      applyWallpaper(uid); closeSheet(); toast(v ? 'Wallpaper changed' : 'Default wallpaper');
+    });
+    $('fvx-w-back').onclick = () => openChatSettings(uid);
+  }
+
+  /* clear chat: removed for you only, the other person keeps the messages */
+  function clearChat(uid) {
+    ls.set(clearKey(uid), String(Date.now()));
+    messages[uid] = []; saveToLocalStorage(); closeSheet();
+    if (String(window.currentChatId) === String(uid)) renderChatMessages(uid);
+    toast('Chat cleared. The other person still has the messages.');
+  }
+  function applyClears() {
+    if (!currentUser) return;
+    Object.keys(messages).forEach(k => {
+      if (!isDirect(k)) return;
+      const t = Number(ls.get(clearKey(k)) || 0);
+      if (t) messages[k] = (messages[k] || []).filter(m => !m.ts || m.ts > t);
+    });
+    const cur = window.currentChatId;
+    if (isDirect(cur) && Number(ls.get(clearKey(cur)) || 0)) { try { renderChatMessages(cur); } catch (e) {} }
+  }
+  const _ls = window.loadSocial;
+  window.loadSocial = async function () { await _ls.apply(this, arguments); try { applyClears(); } catch (e) {} };
+
+  /* block */
+  async function blockUser(u) {
+    if (realUser()) {
+      const { error } = await sb.from('blocks').upsert({ blocker_id: currentUser.id, blocked_id: u.id }, { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true });
+      if (error) { console.error('block failed', error); toast('Could not block this person'); return; }
+    }
+    if (!blockedUsers.includes(u.name)) blockedUsers.push(u.name);
+    saveToLocalStorage();
+    try { renderFeed(); renderStories(); } catch (e) {}
+    closeSheet(); renderChatList(); toast(u.name + ' is blocked');
+  }
+
+  /* mute notifications (phone notifications only; messages still arrive) */
+  async function muteSetup(uid) {
+    const row = $('fvx-c-mute'); if (!row || !realUser()) { if (row) row.onclick = () => toast('Log in to mute a chat'); return; }
+    let mute = null;
+    try { const r = await sb.from('chat_mutes').select('muted_until').eq('muted_user_id', uid).maybeSingle(); if (!r.error) mute = r.data; } catch (e) {}
+    const active = mute && (mute.muted_until === null || new Date(mute.muted_until) > new Date());
+    if (!$('fvx-c-mute')) return;
+    row.innerHTML = (active ? ICON.bellOff : ICON.bell) + ' <span>' + (active ? 'Unmute notifications' + (mute.muted_until ? ' <small style="color:var(--secondary-text)">(until ' + esc(new Date(mute.muted_until).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + ')</small>' : ' <small style="color:var(--secondary-text)">(muted)</small>') : 'Mute notifications') + '</span>';
+    row.onclick = async () => {
+      if (active) {
+        const { error } = await sb.from('chat_mutes').delete().eq('muted_user_id', uid);
+        if (error) { console.error(error); toast('Could not change this setting'); return; }
+        closeSheet(); toast('Notifications are back on'); return;
+      }
+      muteFlow(uid);
+    };
+  }
+  function muteFlow(uid) {
+    sheet('<div class="fvx-title">Mute notifications</div><div style="text-align:center;color:var(--secondary-text);font-size:.85rem;margin-bottom:6px;">You will not get phone notifications for this chat. Messages still arrive.</div>' +
+      '<button class="fvx-act" data-h="8">8 hours</button><button class="fvx-act" data-h="168">1 week</button><button class="fvx-act" data-h="0">Always</button>' +
+      '<button class="fvx-btn sec" id="fvx-m-back" style="width:100%;margin-top:10px;">Back</button>');
+    document.querySelectorAll('#fvx-dm [data-h]').forEach(b => b.onclick = async () => {
+      const h = Number(b.dataset.h), until = h ? new Date(Date.now() + h * 3600000).toISOString() : null;
+      const { error } = await sb.from('chat_mutes').upsert({ muted_user_id: uid, muted_until: until }, { onConflict: 'user_id,muted_user_id' });
+      if (error) { console.error('mute failed', error); toast('Could not mute this chat'); return; }
+      closeSheet(); toast('Notifications muted');
+    });
+    $('fvx-m-back').onclick = () => openChatSettings(uid);
   }
 })();
 </script>
