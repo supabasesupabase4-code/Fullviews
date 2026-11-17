@@ -7923,7 +7923,10 @@ window.addFullToStory = async function (id) {
     bellOff: ic('<path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>'),
     image: ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
     eraser: ic('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>'),
-    ban: ic('<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>')
+    ban: ic('<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>'),
+    music: ic('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+    play: ic('<polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/>'),
+    pause: ic('<rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/>')
   };
   const st = document.createElement('style');
   st.textContent = '@keyframes fvxflash{0%,60%{background:#fff3b0}100%{background:transparent}}.fvx-flash{animation:fvxflash 1.8s;border-radius:14px}' +
@@ -7961,8 +7964,168 @@ window.addFullToStory = async function (id) {
     const first = h.firstElementChild, nm = first && first.querySelectorAll('span')[1];
     if (nm) { nm.style.cursor = 'pointer'; nm.onclick = () => openChatSettings(uid); }
     applyWallpaper(uid);
+    loadSong(uid, true);
   }
-  function applyWallpaper(uid) { const box = $('active-chat-messages'); if (box) box.style.background = ls.get(wpKey(uid)) || ''; }
+  /* ---- wallpaper: colours, or a photo / video chosen from the phone (kept on this phone only) ---- */
+  const mkey = k => currentUser.id + '_' + k;
+  const IMG_T = /^image\/(jpeg|png|webp)$/, VID_T = /^video\/(mp4|webm|quicktime)$/, IMG_X = /\.(jpe?g|png|webp)$/i, VID_X = /\.(mp4|webm|mov|m4v)$/i;
+  function idb() { return new Promise((res, rej) => { const r = indexedDB.open('fullview_wallpapers', 1); r.onupgradeneeded = () => r.result.createObjectStore('wp'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+  async function idbDo(mode, fn) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('wp', mode); const rq = fn(tx.objectStore('wp')); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error); }); }
+  const idbPut = (k, v) => idbDo('readwrite', st => st.put(v, k));
+  const idbGet = k => idbDo('readonly', st => st.get(k));
+  const idbDel = k => idbDo('readwrite', st => st.delete(k));
+  let wpUrl = null;
+  function clearLayer() { const l = $('fvx-wp-layer'); if (l) l.remove(); if (wpUrl) { URL.revokeObjectURL(wpUrl); wpUrl = null; } }
+  function mountLayer(room, rec) {
+    wpUrl = URL.createObjectURL(rec.blob);
+    const layer = document.createElement('div'); layer.id = 'fvx-wp-layer';
+    layer.style.cssText = 'position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#000;';
+    let m;
+    if (rec.type === 'video') {
+      m = document.createElement('video');
+      m.muted = true; m.defaultMuted = true; m.volume = 0; m.loop = true; m.autoplay = true; m.playsInline = true; m.controls = false;
+      m.setAttribute('muted', ''); m.setAttribute('playsinline', ''); m.disablePictureInPicture = true;
+    } else { m = document.createElement('img'); m.alt = ''; }
+    m.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    m.src = wpUrl; layer.appendChild(m); room.insertBefore(layer, room.firstChild);
+    if (m.play) m.play().catch(() => {});
+  }
+  async function applyWallpaper(uid) {
+    const box = $('active-chat-messages'); if (!box) return;
+    clearLayer(); box.style.background = ''; box.style.position = ''; box.style.zIndex = '';
+    const v = ls.get(wpKey(uid)) || '';
+    if (v === 'media') {
+      let rec = null; try { rec = await idbGet(mkey(uid)); } catch (e) {}
+      const room = box.parentElement;
+      if (rec && rec.blob && room && $('active-chat-messages') === box && String(window.currentChatId) === String(uid)) {
+        mountLayer(room, rec); box.style.background = 'transparent'; box.style.position = 'relative'; box.style.zIndex = '1';
+      } else if (!rec) ls.del(wpKey(uid));
+      return;
+    }
+    box.style.background = v;
+  }
+  document.addEventListener('visibilitychange', () => { const v = document.querySelector('#fvx-wp-layer video'); if (v) { if (document.hidden) v.pause(); else v.play().catch(() => {}); } });
+  const _rclw = window.renderChatList;
+  window.renderChatList = function () { clearLayer(); stopSong(); return _rclw.apply(this, arguments); };       // leaving the chat stops the video
+  /* ---- song: the sound of a video (or a music file) from the phone plays in this chat ---- */
+  const songKey = k => 'fullview_song_' + currentUser.id + '_' + k;           // holds the name of the song
+  const SONG_T = /^(video\/(mp4|webm|quicktime)|audio\/(mpeg|mp3|mp4|aac|ogg|wav|x-wav|webm|x-m4a|m4a))$/, SONG_X = /\.(mp4|webm|mov|m4v|mp3|m4a|aac|ogg|wav)$/i;
+  let songAudio = null, songUrl = null, songWasPlaying = false;
+  function stopSong() {
+    if (songAudio) { try { songAudio.pause(); } catch (e) {} songAudio = null; }
+    if (songUrl) { URL.revokeObjectURL(songUrl); songUrl = null; }
+    const p = $('fvx-song-pill'); if (p) p.remove();
+  }
+  function pillState() { const b = $('fvx-song-btn'); if (b && songAudio) b.innerHTML = songAudio.paused ? ICON.play : ICON.pause; }
+  function mountPill(name) {
+    const box = $('active-chat-messages'), room = box && box.parentElement; if (!room) return;
+    const pill = document.createElement('div'); pill.id = 'fvx-song-pill';
+    pill.style.cssText = 'position:absolute;top:8px;left:50%;transform:translateX(-50%);max-width:80%;display:flex;align-items:center;gap:8px;background:rgba(23,18,51,.85);color:#fff;border-radius:22px;padding:5px 6px 5px 12px;z-index:5;font-size:.82rem;box-shadow:0 4px 14px rgba(0,0,0,.25);';
+    pill.innerHTML = ICON.music + '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(name) + '</span>' +
+      '<button id="fvx-song-btn" aria-label="Play or pause" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;"></button>';
+    room.appendChild(pill);
+    $('fvx-song-btn').onclick = () => { if (!songAudio) return; if (songAudio.paused) songAudio.play().catch(() => toast('Tap again to play')); else songAudio.pause(); };
+    pillState();
+  }
+  async function loadSong(uid, tryPlay) {
+    stopSong();
+    const info = ls.get(songKey(uid)); if (!info) return;
+    let rec = null; try { rec = await idbGet('song_' + mkey(uid)); } catch (e) {}
+    if (!rec || !rec.blob) { ls.del(songKey(uid)); return; }
+    if (!$('active-chat-messages') || String(window.currentChatId) !== String(uid)) return;
+    songUrl = URL.createObjectURL(rec.blob);
+    songAudio = new Audio(songUrl); songAudio.loop = true; songAudio.preload = 'auto';
+    songAudio.onplay = pillState; songAudio.onpause = pillState;
+    mountPill(rec.name || info);
+    if (tryPlay) { try { await songAudio.play(); } catch (e) {} }       // the phone may ask for a tap first: the button is there
+    pillState();
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!songAudio) return;
+    if (document.hidden) { songWasPlaying = !songAudio.paused; songAudio.pause(); } else if (songWasPlaying) songAudio.play().catch(() => {});
+  });
+  function mediaDuration(f) {
+    return new Promise(res => {
+      const isVid = /^video\//.test(f.type) || /\.(mp4|webm|mov|m4v)$/i.test(f.name);
+      const v = document.createElement(isVid ? 'video' : 'audio'), url = URL.createObjectURL(f); let done = false;
+      const end = d => { if (done) return; done = true; URL.revokeObjectURL(url); res(d); };
+      v.preload = 'metadata'; v.muted = true;
+      v.onloadedmetadata = () => end(isFinite(v.duration) ? v.duration : 0); v.onerror = () => end(0);
+      setTimeout(() => end(0), 8000); v.src = url;
+    });
+  }
+  function songFlow(uid) {
+    const name = ls.get(songKey(uid));
+    sheet('<div class="fvx-title">Add a song</div>' +
+      '<div style="text-align:center;color:var(--secondary-text);font-size:.88rem;margin-bottom:10px;">Pick a video from your phone and its sound will play in this chat. You can also pick a music file.</div>' +
+      (name ? '<div class="fvx-prev" style="display:flex;align-items:center;gap:8px;">' + ICON.music + '<span style="overflow:hidden;text-overflow:ellipsis;">' + esc(name) + '</span></div>' : '') +
+      '<button class="fvx-act" id="fvx-song-pick">' + ICON.music + ' ' + (name ? 'Change the song' : 'Choose from my phone') + '</button>' +
+      (name ? '<button class="fvx-act danger" id="fvx-song-remove">Remove the song</button>' : '') +
+      '<button class="fvx-btn sec" id="fvx-song-back" style="width:100%;margin-top:10px;">Back</button>');
+    $('fvx-song-pick').onclick = () => pickSong(uid);
+    const rm = $('fvx-song-remove');
+    if (rm) rm.onclick = async () => { try { await idbDel('song_' + mkey(uid)); } catch (e) {} ls.del(songKey(uid)); stopSong(); closeSheet(); toast('Song removed'); };
+    $('fvx-song-back').onclick = () => openChatSettings(uid);
+  }
+  function pickSong(uid) {
+    const inp = document.createElement('input'); inp.type = 'file';
+    inp.accept = 'video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/wav,audio/webm';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      try {
+        if (!SONG_X.test(f.name) || (f.type && !SONG_T.test(f.type))) return toast('Choose an MP4, WebM or MOV video, or an MP3, M4A, AAC, OGG or WAV file');
+        if (f.size > 100 * 1024 * 1024) return toast('Choose a file under 100 MB');
+        if (!(await mediaDuration(f))) return toast('This file cannot be played');
+        const name = f.name.replace(/\.[^.]+$/, '').slice(0, 60) || 'My song';
+        await idbPut('song_' + mkey(uid), { name, blob: f });
+        ls.set(songKey(uid), name); closeSheet(); await loadSong(uid, true); toast('Song added');
+      } catch (e) { console.error('song failed', e); toast('Could not use this file'); }
+    };
+    inp.click();
+  }
+  function videoDuration(f) {
+    return new Promise(res => {
+      const v = document.createElement('video'), url = URL.createObjectURL(f); let done = false;
+      const end = d => { if (done) return; done = true; URL.revokeObjectURL(url); res(d); };
+      v.preload = 'metadata'; v.muted = true;
+      v.onloadedmetadata = () => end(isFinite(v.duration) ? v.duration : 0); v.onerror = () => end(0);
+      setTimeout(() => end(0), 8000); v.src = url;
+    });
+  }
+  function photoBlob(f) {
+    return new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(f);
+      img.onload = () => {
+        const sc = Math.min(1, 1080 / img.width, 1920 / img.height), c = document.createElement('canvas');
+        c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); c.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  function pickWallpaperFile(uid) {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      try {
+        const t = f.type || '', isImg = (IMG_T.test(t) || !t) && IMG_X.test(f.name), isVid = (VID_T.test(t) || !t) && VID_X.test(f.name);
+        if (isImg) {
+          if (f.size > 15 * 1024 * 1024) return toast('Choose a photo under 15 MB');
+          await idbPut(mkey(uid), { type: 'image', blob: await photoBlob(f) });
+        } else if (isVid) {
+          if (f.size > 50 * 1024 * 1024) return toast('Choose a video under 50 MB');
+          const d = await videoDuration(f);
+          if (!d) return toast('This video cannot be used');
+          if (d > 60.5) return toast('The video must be 1 minute or shorter');
+          await idbPut(mkey(uid), { type: 'video', blob: f });
+        } else return toast('Choose a JPG, PNG or WebP photo, or an MP4 or WebM video');
+        ls.set(wpKey(uid), 'media'); closeSheet(); await applyWallpaper(uid); toast('Wallpaper changed');
+      } catch (e) { console.error('wallpaper failed', e); toast('Could not use this file'); }
+    };
+    inp.click();
+  }
   const _ocr = window.openChatRoom;
   window.openChatRoom = function (targetId) {
     const r = _ocr.apply(this, arguments);
@@ -7979,10 +8142,12 @@ window.addFullToStory = async function (id) {
       '<button class="fvx-act" id="fvx-c-search">' + ICON.search + ' Search in chat</button>' +
       '<button class="fvx-act" id="fvx-c-mute">' + ICON.bell + ' <span>Mute notifications</span></button>' +
       '<button class="fvx-act" id="fvx-c-wall">' + ICON.image + ' Wallpaper</button>' +
+      '<button class="fvx-act" id="fvx-c-song">' + ICON.music + ' Add a song</button>' +
       '<button class="fvx-act" id="fvx-c-clear">' + ICON.eraser + ' Clear chat</button>' +
       '<button class="fvx-act danger" id="fvx-c-block">' + ICON.ban + ' Block ' + esc(u.name) + '</button>');
     $('fvx-c-search').onclick = () => searchFlow(uid);
     $('fvx-c-wall').onclick = () => wallpaperFlow(uid);
+    $('fvx-c-song').onclick = () => songFlow(uid);
     armed('fvx-c-clear', () => { clearChat(uid); });
     armed('fvx-c-block', () => blockUser(u));
     muteSetup(uid);
@@ -8025,15 +8190,23 @@ window.addFullToStory = async function (id) {
     ['Sunset', 'linear-gradient(135deg,#ffe3d1,#ffd1e8,#d9d1ff)'], ['Mint', 'linear-gradient(135deg,#d1f0ff,#d9ffe8)']];
   function wallpaperFlow(uid) {
     const cur = ls.get(wpKey(uid)) || '';
-    sheet('<div class="fvx-title">Wallpaper</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;">' +
+    sheet('<div class="fvx-title">Wallpaper</div>' +
+      '<button class="fvx-act" id="fvx-w-file">' + ICON.image + ' Choose a photo or video from my phone</button>' +
+      '<div style="font-size:.74rem;color:var(--secondary-text);margin:2px 0 12px;padding-left:6px;">A video can be up to 1 minute. It plays without sound.</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;">' +
       WALLS.map((w, i) => '<div class="fvx-wp' + (w[1] === cur ? ' on' : '') + '" data-i="' + i + '"><i style="background:' + (w[1] || '#fff') + '"></i>' + w[0] + '</div>').join('') + '</div>' +
       '<div style="font-size:.76rem;color:var(--secondary-text);text-align:center;margin:8px 0;">Only you see this wallpaper, on this phone.</div>' +
-      '<button class="fvx-btn sec" id="fvx-w-back" style="width:100%;">Back</button>');
-    document.querySelectorAll('#fvx-dm .fvx-wp').forEach(el => el.onclick = () => {
+      (cur === 'media' ? '<button class="fvx-act danger" id="fvx-w-remove">Remove my photo or video</button>' : '') +
+      '<button class="fvx-btn sec" id="fvx-w-back" style="width:100%;margin-top:8px;">Back</button>');
+    $('fvx-w-file').onclick = () => pickWallpaperFile(uid);
+    document.querySelectorAll('#fvx-dm .fvx-wp').forEach(el => el.onclick = async () => {
       const v = WALLS[Number(el.dataset.i)][1];
+      try { await idbDel(mkey(uid)); } catch (e) {}
       if (v) ls.set(wpKey(uid), v); else ls.del(wpKey(uid));
-      applyWallpaper(uid); closeSheet(); toast(v ? 'Wallpaper changed' : 'Default wallpaper');
+      await applyWallpaper(uid); closeSheet(); toast(v ? 'Wallpaper changed' : 'Default wallpaper');
     });
+    const rm = $('fvx-w-remove');
+    if (rm) rm.onclick = async () => { try { await idbDel(mkey(uid)); } catch (e) {} ls.del(wpKey(uid)); await applyWallpaper(uid); closeSheet(); toast('Default wallpaper'); };
     $('fvx-w-back').onclick = () => openChatSettings(uid);
   }
 
