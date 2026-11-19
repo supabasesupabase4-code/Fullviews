@@ -5007,7 +5007,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     vm.querySelector('audio').src = msg.audio;
                     div.appendChild(vm);
                 }
-                if (msg.share) {
+                if (msg.share && msg.share.kind !== 'att') {
                     let sn = msg.share;
                     let live = findItem(sn.kind, sn.id);
                     let bg = (sn.kind === 'minim' && !sn.image) ? `style="background:${esc(sn.bg || 'linear-gradient(160deg,#6d4aff,#ff3d8b)')}"` : '';
@@ -5018,6 +5018,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                     div.appendChild(card);
                     if (!msg.note) div.childNodes[0].nodeType === 3 && div.removeChild(div.childNodes[0]);
                 }
+                if (msg.share && msg.share.kind === 'att') { try { div.appendChild(window.fvxRenderAtt(msg, targetId)); } catch (e) { div.appendChild(document.createTextNode(msg.text || 'Attachment')); } }
                 div._msg = msg;
                 if (msg.edited && div.classList.contains('message')) { const ed = document.createElement('span'); ed.className = 'msg-edited'; ed.textContent = ' · edited'; div.appendChild(ed); }
                 box.appendChild(div);
@@ -7554,7 +7555,7 @@ window.addFullToStory = async function (id) {
     const canEdit = mine && srv && !msg.audio && !msg.share && !isAi;
     const canDelete = mine && (srv || isAi);
     if (!canCopy && !canForward && !canEdit && !canDelete) return;
-    const prev = msg.audio ? 'Voice message' : (msg.share ? 'Shared ' + (msg.share.kind === 'post' ? 'post' : 'Full') : txt(msg.text));
+    const prev = msg.audio ? 'Voice message' : (msg.share ? (msg.share.kind === 'att' ? 'Attachment' : 'Shared ' + (msg.share.kind === 'post' ? 'post' : 'Full')) : txt(msg.text));
     const s = sheet('<div class="fvx-prev">' + esc(prev) + '</div>' +
       (canCopy ? '<button class="fvx-act" id="fvx-a-copy">📋 Copy message</button>' : '') +
       (canForward ? '<button class="fvx-act" id="fvx-a-fwd">➤ Forward message</button>' : '') +
@@ -8270,6 +8271,396 @@ window.addFullToStory = async function (id) {
       closeSheet(); toast('Notifications muted');
     });
     $('fvx-m-back').onclick = () => openChatSettings(uid);
+  }
+})();
+</script>
+<script>
+/* ===== Attachments in chats (paperclip) + Full AI images ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const ic = (d, c, s) => '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" fill="none" stroke="' + (c || 'currentColor') + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">' + d + '</svg>';
+  const P = {
+    clip: '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+    pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    poll: '<path d="M4 6h10"/><path d="M4 12h16"/><path d="M4 18h7"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+    sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>'
+  };
+
+  const st = document.createElement('style');
+  st.textContent = `
+.fvx-clip{background:none;border:none;cursor:pointer}
+.fvx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px;padding:6px 0 4px}
+.fvx-tile{display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;color:var(--text,#171233);font-family:inherit;font-size:.78rem}
+.fvx-tile i{display:flex;align-items:center;justify-content:center;width:72px;height:46px;border-radius:24px;border:1px solid var(--border,#e8e3f5);background:#fff}
+.fvx-att{width:236px;max-width:100%;margin-top:4px;background:#fff;color:#171233;border-radius:14px;overflow:hidden;text-align:left;font-size:.88rem}
+.fvx-att img.fvx-ph{display:block;width:100%;max-height:300px;object-fit:cover;cursor:pointer}
+.fvx-att .pad{padding:10px 12px}
+.fvx-att .row{display:flex;align-items:center;gap:10px}
+.fvx-att .sub{font-size:.75rem;color:#7d77a0}
+.fvx-att a.lnk,.fvx-att button.lnk{display:block;text-align:center;margin:8px 12px 12px;padding:8px;border-radius:12px;background:#f1ecff;color:#5b3be0;font-weight:700;font-size:.82rem;text-decoration:none;border:none;cursor:pointer;width:calc(100% - 24px);font-family:inherit}
+.fvx-badge-ai{position:absolute;top:8px;left:8px;background:rgba(23,18,51,.78);color:#fff;font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:10px}
+.fvx-po{position:relative;display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:6px;padding:9px 10px;border:1px solid #e8e3f5;border-radius:12px;background:#fff;color:#171233;font-family:inherit;font-size:.85rem;text-align:left;cursor:pointer;overflow:hidden}
+.fvx-po .bar{position:absolute;left:0;top:0;bottom:0;background:#e6defb;z-index:0;transition:width .3s}
+.fvx-po.mine{border-color:#6d4aff}
+.fvx-po span{position:relative;z-index:1}
+.fvx-ai{position:fixed;inset:0;z-index:100000;background:#fff;display:flex;flex-direction:column;border-radius:0;color:#171233}
+.fvx-ai .top{display:flex;align-items:center;gap:10px;padding:14px 14px 8px}
+.fvx-ai .top h2{flex:1;text-align:center;font-size:1.05rem;margin:0;display:flex;align-items:center;justify-content:center;gap:8px}
+.fvx-ai .top button{background:none;border:none;cursor:pointer;color:#171233;display:flex;padding:6px}
+.fvx-ai .feed{flex:1;overflow-y:auto;padding:8px 14px}
+.fvx-ai .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fvx-ai .tl{height:150px;border-radius:18px;padding:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;color:#fff;font-weight:600;cursor:pointer;border:none;text-align:left;font-family:inherit;font-size:.95rem}
+.fvx-ai .me{align-self:flex-end;background:linear-gradient(135deg,#ff7a59,#ff3d8b 50%,#7a4dff);color:#fff;padding:9px 14px;border-radius:18px 18px 4px 18px;max-width:80%;margin:10px 0 6px auto;width:fit-content}
+.fvx-ai .res{background:#f6f4fc;border-radius:18px;padding:10px;margin:6px 0 10px;max-width:92%}
+.fvx-ai .res img{width:100%;border-radius:14px;display:block}
+.fvx-ai .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.fvx-ai .acts button{display:flex;align-items:center;gap:6px;border:none;border-radius:14px;padding:8px 12px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit;background:#fff;color:#171233;border:1px solid #e8e3f5}
+.fvx-ai .acts button.pri{background:linear-gradient(135deg,#ff7a59,#ff3d8b 50%,#7a4dff);color:#fff;border:none}
+.fvx-ai .inp{display:flex;gap:8px;padding:10px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.fvx-ai .inp input{flex:1;border:none;border-radius:26px;background:#f1eff6;padding:14px 18px;font-size:1rem;font-family:inherit;color:#171233;min-width:0}
+.fvx-ai .inp button{border:none;border-radius:50%;width:48px;height:48px;background:linear-gradient(135deg,#ff7a59,#ff3d8b 50%,#7a4dff);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}`;
+  document.head.appendChild(st);
+
+  /* ---------- tiny helpers ---------- */
+  const isGroupKey = k => typeof k === 'string' && k.indexOf('grp:') === 0;
+  const isDirectKey = k => k != null && k !== 'global-chat' && k !== 'full-ai' && !isGroupKey(k) && users.some(u => String(u.id) === String(k));
+  const uid = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+  function toast(t) { const d = document.createElement('div'); d.className = 'fvx-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2400); }
+  const closeSheet = () => { const o = $('fvx-at'); if (o) o.remove(); };
+  function sheet(html) {
+    closeSheet();
+    const ov = document.createElement('div'); ov.className = 'fvx-ov'; ov.id = 'fvx-at';
+    ov.innerHTML = '<div class="fvx-sheet"><div class="fvx-handle"></div>' + html + '</div>';
+    ov.addEventListener('click', e => { if (e.target === ov) closeSheet(); });
+    document.body.appendChild(ov);
+    return ov.firstChild;
+  }
+  const HTTPS = /^https:\/\//;
+  const sizeText = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  function friends() {
+    return users.filter(u => {
+      if (!currentUser || u.id === currentUser.id || blockedUsers.includes(u.name) || u.banned) return false;
+      return friendRequests.some(r => r.status === 'accepted' && ((r.fromUserId === u.id && r.toUserId === currentUser.id) || (r.fromUserId === currentUser.id && r.toUserId === u.id))) || u.friendStatus === 'accepted';
+    });
+  }
+  async function uploadBlob(blob, ext, contentType) {
+    const path = currentUser.id + '/chat/' + uid() + '.' + ext;
+    const { error } = await sb.storage.from('media').upload(path, blob, { contentType, upsert: false });
+    if (error) throw error;
+    return pubUrl('media', path);
+  }
+  function photoBlob(f, maxSide) {
+    return new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(f);
+      img.onload = () => {
+        const sc = Math.min(1, maxSide / img.width, maxSide / img.height), c = document.createElement('canvas');
+        c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); c.toBlob(b => b ? res({ blob: b, w: c.width, h: c.height }) : rej(new Error('blob')), 'image/jpeg', 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+
+  /* ---------- send an attachment as a message ---------- */
+  async function sendAtt(key, share, body) {
+    if (!realUser()) { showMsgBox('Log in to send attachments.'); return false; }
+    body = String(body || '').slice(0, 200) || 'Attachment';
+    const now = Date.now();
+    if (isGroupKey(key)) {
+      const { data, error } = await sb.from('group_messages').insert({ group_id: Number(key.slice(4)), body, share }).select().single();
+      if (error) { console.error('attachment failed', error); toast('Could not send. Please try again.'); return false; }
+      const sh = Object.assign({}, data.share); delete sh._note;
+      (messages[key] = messages[key] || []).push({ id: data.id, sender: currentUser.id, senderName: currentUser.name, text: data.body, ts: new Date(data.created_at).getTime(), share: sh, note: '' });
+    } else {
+      const { data, error } = await sb.from('messages').insert({ room: 'direct', recipient_id: key, body, share }).select().single();
+      if (error) { console.error('attachment failed', error); toast('Could not send. Please try again.'); return false; }
+      const m = mapMsg(data, new Map(users.map(u => [u.id, u])), {}); m.senderName = currentUser.name;
+      (messages[key] = messages[key] || []).push(m);
+    }
+    saveToLocalStorage();
+    if (String(window.currentChatId) === String(key)) renderChatMessages(key);
+    return true;
+  }
+  /* a preview before sending, like WhatsApp */
+  function confirmSend(title, previewHtml, fn) {
+    sheet('<div class="fvx-title">' + esc(title) + '</div><div style="margin-bottom:12px;">' + previewHtml + '</div>' +
+      '<div style="display:flex;gap:8px;"><button class="fvx-btn sec" id="fvx-cf-no" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-cf-ok" style="flex:1">Send</button></div>');
+    $('fvx-cf-no').onclick = closeSheet;
+    $('fvx-cf-ok').onclick = async () => {
+      const b = $('fvx-cf-ok'); b.disabled = true; b.textContent = 'Sending…';
+      try { const ok = await fn(); if (ok !== false) { closeSheet(); } else { b.disabled = false; b.textContent = 'Send'; } }
+      catch (e) { console.error('send failed', e); toast('Could not send. Please try again.'); b.disabled = false; b.textContent = 'Send'; }
+    };
+  }
+
+  /* ---------- the paperclip ---------- */
+  function addClip(key) {
+    const area = document.querySelector('#chat-content .chat-input-area'); if (!area || area.querySelector('.fvx-clip')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'fvx-clip'; b.title = 'Attach'; b.setAttribute('aria-label', 'Attach');
+    b.style.cssText = 'color:var(--primary);padding:0 8px;display:flex;align-items:center;'; b.innerHTML = ic(P.clip, 'currentColor', 22);
+    b.onclick = () => openAttachMenu(key);
+    area.insertBefore(b, area.querySelector('.mic-btn') || area.lastElementChild);
+  }
+  const _ocr = window.openChatRoom;
+  window.openChatRoom = function (targetId) {
+    const r = _ocr.apply(this, arguments);
+    try { if (isGroupKey(targetId) || isDirectKey(targetId)) addClip(targetId); } catch (e) {}
+    return r;
+  };
+
+  const ITEMS = [
+    ['Gallery', P.image, '#1f6feb', k => pickPhoto(k, false)], ['Camera', P.camera, '#ff3d71', k => pickPhoto(k, true)],
+    ['Location', P.pin, '#12c58f', k => locationFlow(k)], ['Contact', P.user, '#0ea5e9', k => contactFlow(k)],
+    ['Document', P.file, '#7a4dff', k => pickDoc(k)], ['Poll', P.poll, '#f5b301', k => pollFlow(k)],
+    ['Event', P.calendar, '#ff3d71', k => eventFlow(k)], ['AI images', P.sparkles, '#2d7ff9', k => openFullAI(k)]];
+  function openAttachMenu(key) {
+    sheet('<div class="fvx-grid">' + ITEMS.map((it, i) => '<button class="fvx-tile" data-i="' + i + '"><i>' + ic(it[1], it[2], 24) + '</i>' + it[0] + '</button>').join('') + '</div>');
+    document.querySelectorAll('#fvx-at .fvx-tile').forEach(b => b.onclick = () => ITEMS[Number(b.dataset.i)][3](key));
+  }
+
+  /* ---------- photo: gallery or camera ---------- */
+  function pickPhoto(key, camera) {
+    closeSheet();
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp'; if (camera) inp.setAttribute('capture', 'environment');
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      if ((f.type && !/^image\/(jpeg|png|webp)$/.test(f.type)) || !/\.(jpe?g|png|webp)$/i.test(f.name)) return toast('Choose a JPG, PNG or WebP photo');
+      if (f.size > 25 * 1024 * 1024) return toast('This photo is too big');
+      try {
+        const ph = await photoBlob(f, 1280);
+        if (ph.blob.size > 5 * 1024 * 1024) return toast('This photo is too big');
+        const prev = URL.createObjectURL(ph.blob);
+        confirmSend('Send this photo?', '<img src="' + prev + '" alt="" style="width:100%;max-height:50vh;object-fit:contain;border-radius:14px;background:#f6f4fc;">', async () => {
+          const url = await uploadBlob(ph.blob, 'jpg', 'image/jpeg');
+          return sendAtt(key, { kind: 'att', type: 'image', url, w: ph.w, h: ph.h }, 'Photo');
+        });
+      } catch (e) { console.error('photo failed', e); toast('This photo cannot be used'); }
+    };
+    inp.click();
+  }
+
+  /* ---------- document ---------- */
+  const DOC_MIME = { pdf: ['application/pdf'], doc: ['application/msword'], docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], xls: ['application/vnd.ms-excel'],
+    xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'], ppt: ['application/vnd.ms-powerpoint'], pptx: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    txt: ['text/plain'], csv: ['text/csv', 'application/vnd.ms-excel', 'text/plain'] };
+  function pickDoc(key) {
+    closeSheet();
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      const m = /\.([a-z0-9]{2,4})$/i.exec(f.name), ext = m ? m[1].toLowerCase() : '';
+      if (!DOC_MIME[ext] || (f.type && !DOC_MIME[ext].includes(f.type))) return toast('Choose a PDF, Word, Excel, PowerPoint, TXT or CSV file');
+      if (f.size > 5 * 1024 * 1024) return toast('The file must be under 5 MB');
+      const name = f.name.replace(/[\\/]/g, '').slice(0, 90);
+      confirmSend('Send this document?', '<div class="fvx-att" style="width:100%"><div class="pad row">' + ic(P.file, '#7a4dff', 28) + '<div style="min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(name) + '</div><div class="sub">' + esc(ext.toUpperCase()) + ' · ' + sizeText(f.size) + '</div></div></div></div>', async () => {
+        const url = await uploadBlob(f, ext, DOC_MIME[ext][0]);
+        return sendAtt(key, { kind: 'att', type: 'doc', url, name, size: f.size, ext }, 'Document: ' + name);
+      });
+    };
+    inp.click();
+  }
+
+  /* ---------- location ---------- */
+  function locationFlow(key) {
+    if (!navigator.geolocation) { closeSheet(); return toast('Location is not available on this phone'); }
+    sheet('<div class="fvx-title">Share location</div><div style="text-align:center;color:var(--secondary-text);padding:16px 0;">Getting your location…</div>');
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = Math.round(pos.coords.latitude * 1e5) / 1e5, lng = Math.round(pos.coords.longitude * 1e5) / 1e5;
+      confirmSend('Send your location?', '<div class="fvx-att" style="width:100%"><div class="pad row">' + ic(P.pin, '#12c58f', 28) + '<div><div style="font-weight:700;">Your current location</div><div class="sub">' + lat + ', ' + lng + '</div></div></div></div>',
+        () => sendAtt(key, { kind: 'att', type: 'location', lat, lng }, 'Location'));
+    }, () => { closeSheet(); toast('Could not get your location. Allow location for this app and try again.'); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+  }
+
+  /* ---------- contact = one of your friends on fullview ---------- */
+  function contactFlow(key) {
+    const list = friends().filter(u => String(u.id) !== String(key));
+    if (!list.length) { closeSheet(); return toast('You have no friends to share yet'); }
+    sheet('<div class="fvx-title">Share a contact</div><input id="fvx-ct-s" class="fvx-input" placeholder="Search friends" style="margin-bottom:6px"><div id="fvx-ct-l"></div>');
+    const draw = () => {
+      const q = $('fvx-ct-s').value.trim().toLowerCase(), box = $('fvx-ct-l'); box.innerHTML = '';
+      list.filter(u => u.name.toLowerCase().includes(q)).forEach(u => {
+        const row = document.createElement('div'); row.className = 'fvx-row';
+        row.innerHTML = (u.avatarImage ? '<img class="fvx-av" src="' + esc(u.avatarImage) + '" alt="">' : '<div class="fvx-av" style="background:' + esc(u.avatarColor || '#7a4dff') + '">' + esc((u.name || '?')[0]) + '</div>') + '<div style="font-weight:600;">' + esc(u.name) + '</div>';
+        row.onclick = () => confirmSend('Send this contact?', '<div class="fvx-att" style="width:100%"><div class="pad row">' + ic(P.user, '#0ea5e9', 28) + '<div style="font-weight:700;">' + esc(u.name) + '</div></div></div>',
+          () => sendAtt(key, { kind: 'att', type: 'contact', uid: u.id, name: String(u.name).slice(0, 60) }, 'Contact: ' + u.name));
+        box.appendChild(row);
+      });
+    };
+    draw(); $('fvx-ct-s').oninput = draw;
+  }
+
+  /* ---------- poll ---------- */
+  function pollFlow(key) {
+    sheet('<div class="fvx-title">Create a poll</div><input id="fvx-pq" class="fvx-input" maxlength="120" placeholder="Ask a question">' +
+      '<div id="fvx-popts" style="margin-top:8px;display:grid;gap:8px;"></div>' +
+      '<button class="fvx-act" id="fvx-padd" style="margin-top:4px;">' + ic(P.plus, 'currentColor', 20) + ' Add an option</button>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;"><button class="fvx-btn sec" id="fvx-pno" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-pok" style="flex:1">Send poll</button></div>');
+    const box = $('fvx-popts');
+    const add = () => { if (box.children.length >= 6) return toast('A poll can have 6 options'); const i = document.createElement('input'); i.className = 'fvx-input'; i.maxLength = 60; i.placeholder = 'Option ' + (box.children.length + 1); box.appendChild(i); };
+    add(); add();
+    $('fvx-padd').onclick = add; $('fvx-pno').onclick = closeSheet;
+    $('fvx-pok').onclick = async () => {
+      const q = $('fvx-pq').value.trim(), opts = Array.from(box.children).map(i => i.value.trim()).filter(Boolean);
+      if (!q) return toast('Write your question'); if (opts.length < 2) return toast('Add at least 2 options');
+      const b = $('fvx-pok'); b.disabled = true;
+      const ok = await sendAtt(key, { kind: 'att', type: 'poll', q, options: opts.slice(0, 6) }, 'Poll: ' + q);
+      if (ok) closeSheet(); else b.disabled = false;
+    };
+  }
+
+  /* ---------- event ---------- */
+  function eventFlow(key) {
+    const soon = new Date(Date.now() + 3600000); soon.setMinutes(0, 0, 0);
+    const local = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    sheet('<div class="fvx-title">Create an event</div><input id="fvx-et" class="fvx-input" maxlength="80" placeholder="Event name">' +
+      '<input id="fvx-ed" type="datetime-local" class="fvx-input" style="margin-top:8px;" value="' + local(soon) + '">' +
+      '<input id="fvx-ep" class="fvx-input" maxlength="100" placeholder="Place (optional)" style="margin-top:8px;">' +
+      '<textarea id="fvx-ex" class="fvx-input" rows="2" maxlength="300" placeholder="Description (optional)" style="margin-top:8px;resize:none;"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;"><button class="fvx-btn sec" id="fvx-eno" style="flex:1">Cancel</button><button class="fvx-btn" id="fvx-eok" style="flex:1">Send event</button></div>');
+    $('fvx-eno').onclick = closeSheet;
+    $('fvx-eok').onclick = async () => {
+      const title = $('fvx-et').value.trim(), when = new Date($('fvx-ed').value), place = $('fvx-ep').value.trim(), desc = $('fvx-ex').value.trim();
+      if (!title) return toast('Write the event name'); if (isNaN(when.getTime())) return toast('Choose the date and time');
+      const b = $('fvx-eok'); b.disabled = true;
+      const ok = await sendAtt(key, { kind: 'att', type: 'event', title, start: when.toISOString(), place, desc }, 'Event: ' + title);
+      if (ok) closeSheet(); else b.disabled = false;
+    };
+  }
+
+  /* ---------- how an attachment looks inside a message ---------- */
+  const pollCache = new Map();
+  const viewer = url => {
+    const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML = '<img alt="" style="max-width:100%;max-height:100%;object-fit:contain;">'; ov.firstChild.src = url; ov.onclick = () => ov.remove(); document.body.appendChild(ov);
+  };
+  window.fvxRenderAtt = function (msg, key) {
+    const s = msg.share || {}, box = document.createElement('div'); box.className = 'fvx-att';
+    if (s.type === 'image' && HTTPS.test(s.url || '')) {
+      box.style.position = 'relative';
+      const im = document.createElement('img'); im.className = 'fvx-ph'; im.alt = ''; im.loading = 'lazy'; im.src = s.url; im.onclick = () => viewer(s.url); box.appendChild(im);
+      if (s.ai) { const b = document.createElement('span'); b.className = 'fvx-badge-ai'; b.textContent = 'AI'; box.appendChild(b); }
+    } else if (s.type === 'doc' && HTTPS.test(s.url || '')) {
+      box.innerHTML = '<div class="pad row">' + ic(P.file, '#7a4dff', 28) + '<div style="min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(s.name || 'Document') + '</div><div class="sub">' + esc(String(s.ext || '').toUpperCase()) + (s.size ? ' · ' + sizeText(Number(s.size)) : '') + '</div></div></div>';
+      const a = document.createElement('a'); a.className = 'lnk'; a.textContent = 'Open'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; box.appendChild(a);
+    } else if (s.type === 'location' && isFinite(s.lat) && isFinite(s.lng)) {
+      box.innerHTML = '<div class="pad row">' + ic(P.pin, '#12c58f', 28) + '<div><div style="font-weight:700;">Shared location</div><div class="sub">' + esc(s.lat) + ', ' + esc(s.lng) + '</div></div></div>';
+      const a = document.createElement('a'); a.className = 'lnk'; a.textContent = 'Open in Maps'; a.href = 'https://www.google.com/maps?q=' + encodeURIComponent(s.lat + ',' + s.lng); a.target = '_blank'; a.rel = 'noopener noreferrer'; box.appendChild(a);
+    } else if (s.type === 'contact') {
+      const u = users.find(x => String(x.id) === String(s.uid)), nm = (u && u.name) || s.name || 'Contact';
+      box.innerHTML = '<div class="pad row">' + (u && u.avatarImage ? '<img class="fvx-av" src="' + esc(u.avatarImage) + '" alt="">' : '<div class="fvx-av" style="background:' + esc((u && u.avatarColor) || '#7a4dff') + '">' + esc(nm[0] || '?') + '</div>') + '<div style="font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;">' + esc(nm) + '</div></div>';
+      const mine = u && currentUser && u.id === currentUser.id, already = u && friends().some(f => f.id === u.id);
+      if (u && !mine && !already && typeof window.toggleFollow === 'function') { const b = document.createElement('button'); b.className = 'lnk'; b.textContent = 'Follow'; b.onclick = () => { window.toggleFollow(u.id); b.textContent = 'Requested'; b.disabled = true; }; box.appendChild(b); }
+    } else if (s.type === 'event') {
+      const d = new Date(s.start); const ok = !isNaN(d.getTime());
+      box.innerHTML = '<div class="pad row"><div style="width:46px;text-align:center;border:1px solid #e8e3f5;border-radius:12px;overflow:hidden;flex-shrink:0;"><div style="background:#ff3d71;color:#fff;font-size:.62rem;font-weight:700;padding:2px 0;">' + (ok ? esc(d.toLocaleString([], { month: 'short' }).toUpperCase()) : '—') + '</div><div style="font-weight:800;font-size:1.1rem;padding:3px 0;">' + (ok ? d.getDate() : '') + '</div></div><div style="min-width:0"><div style="font-weight:700;">' + esc(s.title || 'Event') + '</div><div class="sub">' + (ok ? esc(d.toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : '') + (s.place ? ' · ' + esc(s.place) : '') + '</div></div></div>' + (s.desc ? '<div class="pad sub" style="padding-top:0;white-space:pre-wrap;">' + esc(s.desc) + '</div>' : '');
+      if (ok) {
+        const z = x => x.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''), end = new Date(d.getTime() + 3600000);
+        const a = document.createElement('a'); a.className = 'lnk'; a.textContent = 'Add to calendar'; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        a.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(s.title || 'Event') + '&dates=' + z(d) + '/' + z(end) + '&details=' + encodeURIComponent(s.desc || '') + '&location=' + encodeURIComponent(s.place || '');
+        box.appendChild(a);
+      }
+    } else if (s.type === 'poll' && Array.isArray(s.options)) {
+      const kind = isGroupKey(key) ? 'group' : 'direct', ck = kind + ':' + msg.id;
+      const wrap = document.createElement('div'); wrap.className = 'pad';
+      wrap.innerHTML = '<div style="font-weight:700;margin-bottom:2px;">' + esc(s.q || 'Poll') + '</div><div class="sub">Tap an option to vote</div>';
+      const paint = res => {
+        wrap.querySelectorAll('.fvx-po').forEach(x => x.remove());
+        const counts = (res && res.counts) || s.options.map(() => 0), total = counts.reduce((a, b) => a + Number(b), 0);
+        s.options.forEach((o, i) => {
+          const b = document.createElement('button'); b.className = 'fvx-po' + (res && res.mine === i ? ' mine' : '');
+          b.innerHTML = '<div class="bar" style="width:' + (total ? Math.round(counts[i] / total * 100) : 0) + '%"></div><span>' + esc(o) + '</span><span style="font-weight:700;">' + Number(counts[i] || 0) + '</span>';
+          b.onclick = async () => {
+            if (!isSrvId(msg.id)) return;
+            const { data, error } = await sb.rpc('vote_poll', { p_kind: kind, p_message: msg.id, p_option: i });
+            if (error) { console.error('vote failed', error); toast('Could not vote. Please try again.'); return; }
+            pollCache.set(ck, { t: Date.now(), res: data }); paint(data);
+          };
+          wrap.appendChild(b);
+        });
+      };
+      const c = pollCache.get(ck); paint(c ? c.res : null);
+      if (isSrvId(msg.id) && (!c || Date.now() - c.t > 15000)) sb.rpc('poll_results', { p_kind: kind, p_message: msg.id }).then(r => { if (!r.error && r.data) { pollCache.set(ck, { t: Date.now(), res: r.data }); paint(r.data); } });
+      box.appendChild(wrap);
+    } else {
+      box.innerHTML = '<div class="pad sub">This attachment cannot be shown.</div>';
+    }
+    return box;
+  };
+
+  /* ---------- Full AI: create an image by talking to the AI ---------- */
+  const SUGGEST = [['Candy storm', 'A storm of colourful candy falling from pink clouds', 'linear-gradient(160deg,#b24592,#f15f79)'], ['Mountain lake', 'A calm mountain lake with perfect reflections at sunrise', 'linear-gradient(160deg,#11998e,#38ef7d)'],
+    ['A rooftop garden', 'A cosy rooftop garden above a big city at sunset', 'linear-gradient(160deg,#f2994a,#f2c94c)'], ['A field of sunflowers', 'A huge field of sunflowers under a blue sky', 'linear-gradient(160deg,#c79a00,#7a8f1e)'],
+    ['A cat at the office', 'A serious orange cat in a suit working at an office desk', 'linear-gradient(160deg,#4568dc,#b06ab3)'], ['A bed under the sea', 'A fancy bed under the sea surrounded by dolphins and fish', 'linear-gradient(160deg,#0f2027,#2c7a9b)']];
+  let aiLast = 0, aiKey = null;
+  function openFullAI(key) {
+    closeSheet(); aiKey = key;
+    const old = $('fvx-ai'); if (old) old.remove();
+    const ov = document.createElement('div'); ov.className = 'fvx-ai'; ov.id = 'fvx-ai';
+    ov.innerHTML = '<div class="top"><button id="fvx-ai-x" aria-label="Close">' + ic(P.x, 'currentColor', 26) + '</button><h2><img src="icon-192.png" alt="" style="width:26px;height:26px;border-radius:8px;"> Create with Full AI</h2><span style="width:38px"></span></div>' +
+      '<div class="feed" id="fvx-ai-feed"><div class="tiles">' + SUGGEST.map((t, i) => '<button class="tl" data-i="' + i + '" style="background:' + t[2] + '">' + ic(P.sparkles, '#fff', 22) + t[0] + '</button>').join('') + '</div>' +
+      '<div style="text-align:center;color:#7d77a0;font-size:.78rem;margin-top:14px;">Images are made by AI. They can be wrong or odd.</div></div>' +
+      '<div class="inp"><input id="fvx-ai-in" maxlength="300" placeholder="Describe an image..." autocomplete="off"><button id="fvx-ai-go" aria-label="Create">' + ic(P.send, '#fff', 22) + '</button></div>';
+    document.body.appendChild(ov);
+    $('fvx-ai-x').onclick = () => ov.remove();
+    $('fvx-ai-go').onclick = () => aiGenerate($('fvx-ai-in').value);
+    $('fvx-ai-in').onkeydown = e => { if (e.key === 'Enter') aiGenerate($('fvx-ai-in').value); };
+    ov.querySelectorAll('.tl').forEach(b => b.onclick = () => aiGenerate(SUGGEST[Number(b.dataset.i)][1]));
+  }
+  async function aiGenerate(prompt) {
+    prompt = String(prompt || '').trim().slice(0, 300);
+    if (prompt.length < 3) return toast('Describe the image you want');
+    const wait = 4000 - (Date.now() - aiLast);
+    if (wait > 0) return toast('Please wait ' + Math.ceil(wait / 1000) + ' seconds');
+    aiLast = Date.now();
+    const feed = $('fvx-ai-feed'); if (!feed) return;
+    const tiles = feed.querySelector('.tiles'); if (tiles) { tiles.parentElement.innerHTML = ''; }
+    $('fvx-ai-in').value = '';
+    const me = document.createElement('div'); me.className = 'me'; me.textContent = prompt; feed.appendChild(me);
+    const res = document.createElement('div'); res.className = 'res'; res.innerHTML = '<div style="color:#7d77a0;padding:18px 6px;">Full AI is creating your image…</div>'; feed.appendChild(res);
+    feed.scrollTop = feed.scrollHeight;
+    let blob = null, shown = null;
+    try {
+      const { data, error } = await sb.functions.invoke('full-ai-image', { body: { prompt } });
+      if (error || !data || !data.image) {
+        let code = ''; try { if (error && error.context && error.context.json) code = (await error.context.json()).error || ''; } catch (_) {}
+        const e = new Error(code || 'failed'); e.code = code; throw e;
+      }
+      blob = await (await fetch(data.image)).blob(); shown = URL.createObjectURL(blob);
+    } catch (e) {
+      console.error('ai image failed', e);
+      const msg = e.code === 'limit' ? 'You made many images already. Please try again a bit later.'
+        : e.code === 'busy' ? 'Full AI is busy right now. Try again in a moment.'
+        : 'Full AI is not available right now. Please try again later.';
+      res.innerHTML = '<div style="padding:14px 6px;">' + msg + '</div><div class="acts"><button id="fvx-ai-retry">' + ic(P.refresh, 'currentColor', 18) + ' Try again</button></div>';
+      $('fvx-ai-retry').onclick = () => { aiLast = 0; aiGenerate(prompt); };
+      return;
+    }
+    res.innerHTML = '<img alt="" src="' + shown + '"><div class="acts"><button class="pri" id="fvx-ai-send">' + ic(P.send, '#fff', 18) + ' Send in chat</button><button id="fvx-ai-again">' + ic(P.refresh, 'currentColor', 18) + ' New version</button><button id="fvx-ai-save">' + ic(P.download, 'currentColor', 18) + ' Save</button></div>';
+    feed.scrollTop = feed.scrollHeight;
+    $('fvx-ai-again').onclick = () => aiGenerate(prompt);
+    $('fvx-ai-save').onclick = () => { const a = document.createElement('a'); a.href = shown; a.download = 'full-ai.jpg'; document.body.appendChild(a); a.click(); a.remove(); };
+    $('fvx-ai-send').onclick = async () => {
+      const b = $('fvx-ai-send'); b.disabled = true; b.textContent = 'Sending…';
+      try {
+        const ext = /png/.test(blob.type) ? 'png' : /webp/.test(blob.type) ? 'webp' : 'jpg';
+        const share = { kind: 'att', type: 'image', url: await uploadBlob(blob, ext, blob.type), ai: true };
+        const ok = await sendAtt(aiKey, share, 'AI image');
+        if (ok) { const o = $('fvx-ai'); if (o) o.remove(); toast('Image sent'); } else { b.disabled = false; b.textContent = 'Send in chat'; }
+      } catch (e) { console.error('ai send failed', e); toast('Could not send. Please try again.'); b.disabled = false; b.textContent = 'Send in chat'; }
+    };
   }
 })();
 </script>
