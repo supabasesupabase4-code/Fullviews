@@ -3534,7 +3534,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             document.getElementById('viewer-name').innerText = story.authorName;
             document.getElementById('viewer-time').innerText = timeAgo(story.createdAt || story.id);
             document.getElementById('viewer-img').src = story.image;
-            document.getElementById('viewer-song').innerHTML = story.song ? `${songCover(story.songMeta)}${esc(story.song)}` + (story.songLink ? ` · <a href="${esc(story.songLink)}" target="_blank" rel="noopener" style="color:#7fd0ff;text-decoration:none">${listenLabel(story.songLink)}</a>` : '') : '';
+            document.getElementById('viewer-song').innerHTML = story.song ? `${songCover(story.songMeta)}${esc(story.song)}` + (listenLabel(story.songLink) ? ` · <a href="${esc(story.songLink)}" target="_blank" rel="noopener" style="color:#7fd0ff;text-decoration:none">${listenLabel(story.songLink)}</a>` : '') : '';
             document.getElementById('viewer-repost-tag').innerText = story.repostOf ? `🔁 Reposted from ${story.repostOf.authorName}` : '';
             document.getElementById('viewer-repost-tag').style.display = story.repostOf ? 'block' : 'none';
             document.getElementById('sv-delete').style.display = (currentUser && story.authorName === currentUser.name) ? 'block' : 'none';
@@ -3560,8 +3560,8 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
             sv.elapsed += now - sv.last;
             sv.last = now;
             let fill = document.getElementById('sv-fill-' + sv.idx);
-            if (fill) fill.style.width = Math.min(100, sv.elapsed / STORY_MS * 100) + '%';
-            if (sv.elapsed >= STORY_MS) { nextStory(); return; }
+            if (fill) fill.style.width = Math.min(100, sv.elapsed / (sv.dur || STORY_MS) * 100) + '%';
+            if (sv.elapsed >= (sv.dur || STORY_MS)) { nextStory(); return; }
             sv.raf = requestAnimationFrame(storyTick);
         }
 
@@ -4298,7 +4298,7 @@ button:focus-visible,.input-field:focus-visible{outline:2px solid var(--primary)
                         <img src="${post.image}" class="post-image">
                         <div class="heart-pop">❤️</div>
                     </div>
-                    ${post.song ? `<div class="post-music">${(post.synth || resolveAudio('post', post)) ? `<button type="button" data-music-key="post-${post.id}" onclick="togglePostMusic(${post.id}, this)">${activePlayback && activePlayback.key === 'post-' + post.id ? '⏸' : '▶'}</button>` : ''}<span>${songCover(post.songMeta)}${esc(post.song)}</span>${post.songLink ? `<a href="${esc(post.songLink)}" target="_blank" rel="noopener" style="margin-left:auto;color:var(--primary);font-weight:600;white-space:nowrap;text-decoration:none">${listenLabel(post.songLink)}</a>` : ''}</div>` : ''}
+                    ${post.song ? `<div class="post-music">${(post.synth || resolveAudio('post', post)) ? `<button type="button" data-music-key="post-${post.id}" onclick="togglePostMusic(${post.id}, this)">${activePlayback && activePlayback.key === 'post-' + post.id ? '⏸' : '▶'}</button>` : ''}<span>${songCover(post.songMeta)}${esc(post.song)}</span>${listenLabel(post.songLink) ? `<a href="${esc(post.songLink)}" target="_blank" rel="noopener" style="margin-left:auto;color:var(--primary);font-weight:600;white-space:nowrap;text-decoration:none">${listenLabel(post.songLink)}</a>` : ''}</div>` : ''}
                     <div class="post-actions" id="actions-post-${post.id}">${actionsHtml('post', post)}</div>
                     <div class="post-footer">
                         <span style="font-weight:600; margin-right:6px;">${esc(post.authorName)}</span><span class="cap" onclick="this.classList.toggle('open')">${esc(post.caption)}</span>
@@ -7157,7 +7157,7 @@ window.addFullToStory = async function (id) {
       const story = sv && sv.list && sv.list[sv.idx], tag = document.getElementById('viewer-repost-tag');
       if (story && story.refFull) {
         const f = minims.find(x => x.id === story.refFull);
-        tag.textContent = f ? '🎬 Full by ' + f.authorName + ' · tap to watch' : '🎬 Tap to watch the Full';
+        tag.textContent = f ? '🎬 Full by ' + f.authorName + ' · tap for the full video' : '🎬 Tap for the full video';
         tag.style.display = 'block'; tag.style.cursor = 'pointer'; tag.style.pointerEvents = 'auto';
         tag.onclick = () => { closeStoryViewer(); openMinim(story.refFull); };
       } else if (tag) { tag.style.cursor = ''; tag.onclick = null; }
@@ -8725,7 +8725,7 @@ window.addFullToStory = async function (id) {
   document.head.appendChild(st);
 
   window.songCover = meta => meta && /^https:\/\/[a-z0-9.-]+\.mzstatic\.com\//.test(meta.cover || '') ? '<img src="' + esc(meta.cover) + '" alt="" style="width:26px;height:26px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:6px">' : '🎵 ';
-  window.listenLabel = url => /^https:\/\/(itunes|music)\.apple\.com\//.test(url || '') ? 'Apple Music ↗' : 'Listen ↗';
+  window.listenLabel = url => /^https:\/\/(itunes|music)\.apple\.com\//.test(url || '') ? '' : 'Listen ↗';
 
   /* ---------- where the songs come from: the iTunes Search API (title, artist, cover, 30-second preview) ---------- */
   const ITUNES = 'https://itunes.apple.com/search';
@@ -8786,7 +8786,7 @@ window.addFullToStory = async function (id) {
       '<div class="tb"><button class="on" data-t="browse">Browse</button><button data-t="saved">Saved</button></div>' +
       '<div class="bd" id="fvx-ms-bd"></div>' +
       '<div class="up" id="fvx-ms-up">' + ic(I.up, '#8fc4ff', 14) + ' Upload audio from your phone</div>' +
-      '<div class="mini" id="fvx-ms-mini"><img class="cv" id="fvx-ms-mcv" alt=""><div class="tx"><div class="t1" id="fvx-ms-mt"></div><div class="t2"><span id="fvx-ms-ma"></span> · <a id="fvx-ms-ml" target="_blank" rel="noopener noreferrer">Apple Music ↗</a></div></div>' +
+      '<div class="mini" id="fvx-ms-mini"><img class="cv" id="fvx-ms-mcv" alt=""><div class="tx"><div class="t1" id="fvx-ms-mt"></div><div class="t2"><span id="fvx-ms-ma"></span></div></div>' +
       '<button id="fvx-ms-pp" aria-label="Play or pause"></button><button class="go" id="fvx-ms-go" aria-label="Use this song">' + ic(I.arrow, 'currentColor', 20) + '</button></div></div>';
     ov.addEventListener('click', e => { if (e.target === ov) close(); });
     document.body.appendChild(ov);
@@ -8803,7 +8803,6 @@ window.addFullToStory = async function (id) {
   function paintMini() {
     const m = $('fvx-ms-mini'); if (!m || !cur) return;
     m.classList.add('on'); $('fvx-ms-mcv').src = cur.cover || ''; $('fvx-ms-mt').textContent = cur.title; $('fvx-ms-ma').textContent = cur.artist;
-    const a = $('fvx-ms-ml'); if (/^https:\/\//.test(cur.link || '')) { a.href = cur.link; a.style.display = ''; } else a.style.display = 'none';
     $('fvx-ms-pp').innerHTML = pv && !pv.paused ? ic(I.pause, '#fff', 22, '#fff') : ic(I.play, '#fff', 22, '#fff');
     document.querySelectorAll('#fvx-ms-ov .tr').forEach(r => { const on = r.dataset.id === cur.id; r.classList.toggle('on', on); const e = r.querySelector('.fvx-eqb'); if (e) { e.style.display = on ? 'inline-flex' : 'none'; e.classList.toggle('off', !(on && pv && !pv.paused)); } });
   }
@@ -8868,6 +8867,66 @@ window.addFullToStory = async function (id) {
 
   /* the composer was already built with the old list: build it again */
   ['post', 'story'].forEach(k => { try { buildMusicPicker(k); if (musicSel[k]) setMusic(k, musicSel[k]); } catch (e) {} });
+})();
+</script>
+<script>
+/* ===== Stories: they last 24 hours, and a story made from a Full plays that Full ===== */
+(function () {
+  const DAY = 24 * 60 * 60 * 1000;
+  const age = s => s.createdAt ? Date.now() - Number(s.createdAt) : (Number(s.id) > 1e11 ? Date.now() - Number(s.id) : 0);
+  function prune() {
+    let n = 0;
+    for (let i = stories.length - 1; i >= 0; i--) if (age(stories[i]) >= DAY) { stories.splice(i, 1); n++; }
+    if (n) { try { saveToLocalStorage(); } catch (e) {} }
+    return n;
+  }
+  const _rs = window.renderStories;
+  window.renderStories = function () { prune(); return _rs.apply(this, arguments); };
+  const _osg = window.openStoryGroup;
+  window.openStoryGroup = function () { prune(); return _osg.apply(this, arguments); };
+  const _rpg = window.renderProfileGrids;
+  window.renderProfileGrids = function () { prune(); return _rpg.apply(this, arguments); };
+  const refresh = () => { if (prune()) { try { renderStories(); } catch (e) {} } };
+  setInterval(refresh, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+
+  /* a story that comes from a Full plays the Full's video (the first 60 seconds), the tag opens the whole Full */
+  let vid = null, sync = null;
+  function clearVid() {
+    if (sync) { clearInterval(sync); sync = null; }
+    if (vid) { try { vid.pause(); vid.removeAttribute('src'); vid.load(); } catch (e) {} vid.remove(); vid = null; }
+    const img = document.getElementById('viewer-img'); if (img) img.style.visibility = '';
+  }
+  function playFullIn(url) {
+    const img = document.getElementById('viewer-img'); if (!img || !sv) return;
+    const v = document.createElement('video'); v.id = 'viewer-vid'; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.loop = false;
+    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;';
+    img.parentNode.insertBefore(v, img.nextSibling); vid = v;
+    sv.dur = 60000;                                                    // until we know the real length
+    v.onloadedmetadata = () => { if (sv && vid === v && isFinite(v.duration) && v.duration > 0) sv.dur = Math.min(v.duration, 60) * 1000; };
+    v.onplaying = () => { if (vid === v) img.style.visibility = 'hidden'; };
+    v.onended = () => { if (sv && vid === v) nextStory(); };
+    v.src = url;
+    v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+    sync = setInterval(() => {                                         // hold the screen = pause the video
+      if (!sv || !vid) { clearVid(); return; }
+      if (sv.paused && !vid.paused) vid.pause(); else if (!sv.paused && vid.paused && !vid.ended) vid.play().catch(() => {});
+    }, 150);
+  }
+  const _csv = window.closeStoryViewer;
+  window.closeStoryViewer = function () { clearVid(); return _csv.apply(this, arguments); };
+  const _ss = window.showStoryAt;
+  window.showStoryAt = function () {
+    clearVid();
+    const r = _ss.apply(this, arguments);
+    try {
+      if (sv) sv.dur = 0;
+      const story = sv && sv.list && sv.list[sv.idx];
+      const url = story && story.refFull ? videoUrlById[story.refFull] : null;
+      if (url && /^https:\/\//.test(url)) playFullIn(url);
+    } catch (e) {}
+    return r;
+  };
 })();
 </script>
 <script>
